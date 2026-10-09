@@ -6,9 +6,9 @@ The presentation layer is new; `main.py`, `config.py`, `heroes.py`, and `viewer.
 
 ## Upstream, rights, and publication gate
 
-This project is derived from [Zenitude71/overwatch-rancker](https://github.com/Zenitude71/overwatch-rancker). The upstream repository declares no license and provides no image provenance. The inherited `images/` PNGs are omitted from the static site; `prepare_site.py` copies them only when explicitly given `--allow-hero-assets`, which this branch does not use.
+This project is derived from [Zenitude71/overwatch-rancker](https://github.com/Zenitude71/overwatch-rancker). The upstream repository currently declares no license and provides no image provenance. That absence is not permission to redistribute code or assets. The inherited `images/` PNGs are therefore excluded from the default site artifact. The site uses a CSS initials/gradient placeholder; `--allow-hero-assets` and `vars.ALLOW_HERO_ASSETS` are disabled until written redistribution authorization or independently verifiable asset terms are recorded here.
 
-This branch contains no Pages workflow, and Pages is not configured on the fork. No public deployment is enabled.
+`vars.PAGES_PUBLISH_ENABLED` is also intentionally absent/false until repository administration and publication authorization are established. Do not claim a Pages URL without checking the actual Pages API result.
 
 ## Architecture
 
@@ -19,6 +19,9 @@ flowchart LR
   C --> D[validate_json.py]
   D --> E[prepare_site.py]
   E --> F[docs static frontend]
+  G[generated-data branch cache] --> H[update_dataset.py]
+  H --> D
+  H --> E
 ```
 
 `main.py` preserves the original numerical contract: hero/mode payload precedence, the `heroes.HERO_ROLES` allowlist, pseudo extraction before the first hyphen, Quickplay/Competitive accumulation, positive-only total lookup, average × `time_played / 600` reconstruction, `games_won / 0.5` game estimation, 100% winrate cap, death denominator fallback of one, rounded emitted fields, threshold filtering with top-two fallback, per-hero relative min-max normalization, equal/reversed normalization result of one, role coefficients, score/time sorting, UTF-8 field names, omitted `Morts_Moyenne`, and summary ordering.
@@ -93,3 +96,36 @@ npm test
 
 The deterministic Playwright server maps `docs/` below `/overwatch-rancker/` so relative CSS, JavaScript, JSON, and asset paths are exercised.
 
+## Update, cache, and deployment
+
+After the frontend branch is merged into the fork's `main`, the actions branch adds `.github/workflows/pages.yml`. It runs on pushes to `main`, manual dispatch, and `0 */6 * * *`. It does not run on pull requests. A manual or scheduled run on another ref fails explicitly.
+
+The collection job has only `contents: write` and read access needed for checkout/validation. The Pages job has `contents: read`, `pages: write`, and `id-token: write`. The workflow uses pinned full commit SHAs for checkout, Python setup, Pages configuration, artifact upload, and deployment.
+
+`update_dataset.py` runs the pipeline with a controlled output directory, requires `complete == true`, validates before metadata/site preparation, and writes only a validator-approved pair. If the fresh run is incomplete, it preserves the last valid cache bytes and source timestamp while marking the new artifact `is_stale: true`. If no valid cache exists, it exits nonzero before producing a deployable site. No fictional rows are created.
+
+Only `classement.json` and `data-meta.json` are persisted on the dedicated `generated-data` branch. Updates use normal fast-forward pushes and never force-push. A generated-data push cannot trigger this workflow because only `main` push/manual/schedule events are configured.
+
+The repository-wide concurrency group uses `cancel-in-progress: false`: one active refresh is protected during cache replacement. GitHub retains one pending run and may replace an obsolete pending refresh with the newest request; this is safe because each refresh is idempotent and the active replacement is not cancelled.
+
+Do not enable Pages or hero assets until the rights and administration gates above are resolved. The current local checkout has no authenticated `gh` CLI and its remote remains the upstream repository, so no fork push, PR, Actions setting, cache branch, or deployment is claimed here.
+
+## Troubleshooting and upstream sync
+
+- **No data on first update:** expected when the API response is incomplete and no valid `generated-data` cache exists; fix the eligible request/API issue and rerun.
+- **Stale banner:** the latest collection was rejected, but the last complete validated pair was safely retained.
+- **Invalid dataset:** run `python scripts/validate_json.py <path>`; do not bypass the validator.
+- **Missing browser data:** verify `classement.json` and `data-meta.json` are relative files in the prepared `docs/` artifact.
+- **Policy changes:** run two fresh read-only probes, record both timestamps and the exact reason, then update only configured pairs.
+
+When a fork and authenticated CLI are available:
+
+```text
+git remote add upstream https://github.com/Zenitude71/overwatch-rancker.git
+git fetch upstream
+git switch main
+git merge --ff-only upstream/main
+git push origin main
+```
+
+Never push generated work, credentials, or unverified inherited assets to the upstream repository.
