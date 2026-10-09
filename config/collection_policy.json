@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "excluded_requests": [
+    {
+      "player_id": "Colbern-2193",
+      "gamemode": "quickplay",
+      "reason": "Repeated HTTP 404 in two consecutive read-only probes",
+      "observed_at": [
+        "2026-10-09T19:09:47.986999Z",
+        "2026-10-09T19:10:35.134993Z"
+      ],
+      "confirmation_status": "confirmed_twice"
+    },
+    {
+      "player_id": "Colbern-2193",
+      "gamemode": "competitive",
+      "reason": "Repeated HTTP 404 in two consecutive read-only probes",
+      "observed_at": [
+        "2026-10-09T19:09:49.926734Z",
+        "2026-10-09T19:10:35.621716Z"
+      ],
+      "confirmation_status": "confirmed_twice"
+    },
+    {
+      "player_id": "lasthigh-21178",
+      "gamemode": "quickplay",
+      "reason": "Repeated HTTP 404 in two consecutive read-only probes",
+      "observed_at": [
+        "2026-10-09T19:09:53.462148Z",
+        "2026-10-09T19:10:37.393196Z"
+      ],
+      "confirmation_status": "confirmed_twice"
+    },
+    {
+      "player_id": "lasthigh-21178",
+      "gamemode": "competitive",
+      "reason": "Repeated HTTP 404 in two consecutive read-only probes",
+      "observed_at": [
+        "2026-10-09T19:09:55.024182Z",
+        "2026-10-09T19:10:37.896498Z"
+      ],
+      "confirmation_status": "confirmed_twice"
+    }
+  ]
+}

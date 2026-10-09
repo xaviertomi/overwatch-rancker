@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Overwatch Ranker</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-content">
+      <div>
+        <p class="eyebrow">Overwatch performance index</p>
+        <h1>Overwatch Ranker</h1>
+        <p class="lede">A static, auditable view of the generated player rankings.</p>
+      </div>
+      <div class="status-stack" aria-live="polite">
+        <span id="status" class="status">Loading ranking data…</span>
+        <span id="freshness" class="freshness"></span>
+      </div>
+    </div>
+  </header>
+  <main class="shell">
+    <div id="error" class="notice error" role="alert" hidden></div>
+    <div id="stale-banner" class="notice stale" role="status" hidden>This dataset is stale-safe: the last complete collection is shown while the latest update is retried.</div>
+    <section class="controls panel" aria-labelledby="controls-title">
+      <h2 id="controls-title">Explore rankings</h2>
+      <div class="control-grid">
+        <label>Role<select id="role-select" aria-label="Role"></select></label>
+        <label>Hero<select id="hero-select" aria-label="Hero"></select></label>
+        <label class="search-control">Search player<input id="search" type="search" autocomplete="off" placeholder="Filter by pseudo"></label>
+        <button id="reset" type="button" class="button secondary">Reset view</button>
+      </div>
+    </section>
+    <div class="content-grid">
+      <aside class="summary panel" aria-labelledby="summary-title">
+        <h2 id="summary-title">Player summary</h2>
+        <p class="muted">Total recorded hours, independent of hero ranking.</p>
+        <ul id="summary-list" class="summary-list"></ul>
+      </aside>
+      <section class="ranking panel" aria-labelledby="hero-heading">
+        <div class="hero-heading">
+          <div id="hero-portrait" class="portrait" aria-hidden="true"><span>OW</span></div>
+          <div>
+            <p class="eyebrow" id="hero-role">Tank</p>
+            <h2 id="hero-heading">No hero selected</h2>
+            <p id="hero-description" class="muted">Choose a role and hero to inspect the producer's canonical order.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="ranking-table">
+            <caption id="table-caption">Canonical ranking for the selected hero</caption>
+            <thead>
+              <tr>
+                <th scope="col">Position</th>
+                <th scope="col">Player</th>
+                <th scope="col"><button type="button" data-sort="score">Score</button></th>
+                <th scope="col"><button type="button" data-sort="Temps_Jeu_Heures">Hours</button></th>
+                <th scope="col"><button type="button" data-sort="Winrate_%">Winrate</button></th>
+                <th scope="col"><button type="button" data-sort="KDA">KDA</button></th>
+                <th scope="col"><button type="button" data-sort="Elims_Moyenne">Elims / 10m</button></th>
+                <th scope="col"><button type="button" data-sort="Assists_Moyenne">Assists / 10m</button></th>
+                <th scope="col"><button type="button" data-sort="Degats_Moyenne">Damage / 10m</button></th>
+                <th scope="col"><button type="button" data-sort="Soins_Moyenne">Healing / 10m</button></th>
+              </tr>
+            </thead>
+            <tbody id="ranking-body"><tr><td colspan="10" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <details class="methodology panel">
+      <summary>Methodology and limitations</summary>
+      <p>Scores are produced by the Python pipeline using relative min–max normalization within each hero. Games and averages may be estimated from the source API. Filtering and sorting here never recompute or change those values; the position column remains the producer's canonical rank.</p>
+    </details>
+  </main>
+  <footer class="site-footer"><div class="shell">Generated data only. No browser request is made to OverFast.</div></footer>
+</body>
+</html>
