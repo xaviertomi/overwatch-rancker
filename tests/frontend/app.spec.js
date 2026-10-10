@@ -174,16 +174,30 @@ test('keeps the site frames aligned and adds three visible characters without pa
 
     if (width === 1568) {
       await expect(page.locator('#ranking-body tr td:last-child')).toHaveText(['276,71', '527,29']);
-      const statsVisible = await page.evaluate(() => {
-        const wrap = document.querySelector('.table-wrap').getBoundingClientRect();
-        return [...document.querySelectorAll('#ranking-body tr td:last-child')].every(cell => {
+      const statsGeometry = await page.evaluate(() => {
+        const wrapElement = document.querySelector('.table-wrap');
+        const wrap = wrapElement.getBoundingClientRect();
+        return [...document.querySelectorAll('#ranking-body tr td:last-child')].map(cell => {
           const range = document.createRange();
           range.selectNodeContents(cell);
           const text = range.getBoundingClientRect();
-          return text.left >= wrap.left && text.right <= wrap.right;
+          return {
+            value: cell.textContent,
+            textLeft: text.left,
+            textRight: text.right,
+            wrapLeft: wrap.left,
+            wrapRight: wrap.right,
+            scrollLeft: wrapElement.scrollLeft,
+            clientWidth: wrapElement.clientWidth,
+            scrollWidth: wrapElement.scrollWidth,
+          };
         });
       });
-      expect(statsVisible).toBeTruthy();
+      expect(
+        statsGeometry.every(stat =>
+          stat.textLeft >= stat.wrapLeft && stat.textRight <= stat.wrapRight),
+        JSON.stringify(statsGeometry),
+      ).toBeTruthy();
     }
   }
 });
