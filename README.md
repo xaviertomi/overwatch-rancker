@@ -98,7 +98,7 @@ The deterministic Playwright server maps `docs/` below `/overwatch-rancker/` so 
 
 ## Update, cache, and deployment
 
-After the frontend branch is merged into the fork's `main`, the actions branch adds `.github/workflows/pages.yml`. It runs on pushes to `main`, manual dispatch, and `0 */6 * * *`. It does not run on pull requests. A manual or scheduled run on another ref fails explicitly.
+The GitHub Actions workflow `.github/workflows/pages.yml` runs on pushes to `main`, manual dispatch, and `0 */6 * * *`. It does not run on pull requests. A manual or scheduled run on another ref fails explicitly.
 
 The collection job has only `contents: write` and read access needed for checkout/validation. The Pages job has `contents: read`, `pages: write`, and `id-token: write`. The workflow uses pinned full commit SHAs for checkout, Python setup, Pages configuration, artifact upload, and deployment.
 
@@ -108,7 +108,7 @@ Only `classement.json` and `data-meta.json` are persisted on the dedicated `gene
 
 The repository-wide concurrency group uses `cancel-in-progress: false`: one active refresh is protected during cache replacement. GitHub retains one pending run and may replace an obsolete pending refresh with the newest request; this is safe because each refresh is idempotent and the active replacement is not cancelled.
 
-Pages and hero assets remain disabled until the rights and administration gates above are resolved. Do not infer deployment from the workflow file: verify actual fork workflow runs, scheduled-workflow metadata, cache commits, and Pages output after the PRs merge.
+Pages publication and hero asset copying remain disabled until the rights and administration gates above are resolved. Do not infer deployment from the workflow file: verify actual fork workflow runs, scheduled-workflow metadata, generated-data commits, and Pages output before claiming an update or public URL.
 
 ## Troubleshooting and upstream sync
 
