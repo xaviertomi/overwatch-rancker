@@ -137,6 +137,7 @@ test('keeps the site frames aligned and adds three visible characters without pa
         viewportWidth: innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         tableVisibleWidth: wrap.getBoundingClientRect().width,
+        tableClientWidth: wrap.clientWidth,
         tableScrollWidth: wrap.scrollWidth,
         threeCh,
         framesAligned: frames.every(frame =>
