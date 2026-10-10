@@ -136,7 +136,7 @@ test('keeps the site frames aligned and adds three visible characters without pa
       return {
         viewportWidth: innerWidth,
         documentWidth: document.documentElement.scrollWidth,
-        tableClientWidth: wrap.clientWidth,
+        tableVisibleWidth: wrap.getBoundingClientRect().width,
         tableScrollWidth: wrap.scrollWidth,
         threeCh,
         framesAligned: frames.every(frame =>
@@ -144,7 +144,7 @@ test('keeps the site frames aligned and adds three visible characters without pa
       };
     });
     expect(dimensions.documentWidth).toBe(width);
-    expect(dimensions.tableClientWidth).toBeGreaterThanOrEqual(baselineWidth + dimensions.threeCh - 0.5);
+    expect(dimensions.tableVisibleWidth).toBeGreaterThanOrEqual(baselineWidth + dimensions.threeCh);
     expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth);
     expect(dimensions.framesAligned).toBeTruthy();
   }
