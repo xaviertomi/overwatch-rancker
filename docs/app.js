@@ -355,9 +355,11 @@
       const ageMs = Math.max(0, Date.now() - generatedDate.getTime());
       const ageHours = Math.floor(ageMs / 3_600_000);
       const ageDays = Math.floor(ageHours / 24);
-      const ageText = ageHours < 24
-        ? `il y a ${ageHours} ${ageHours === 1 ? "heure" : "heures"}`
-        : `il y a ${ageDays} ${ageDays === 1 ? "jour" : "jours"}`;
+      const ageText = ageHours === 0
+        ? "à l’instant"
+        : ageHours < 24
+          ? `il y a ${ageHours} ${ageHours === 1 ? "heure" : "heures"}`
+          : `il y a ${ageDays} ${ageDays === 1 ? "jour" : "jours"}`;
       freshness.textContent = `Données générées le ${generatedDate.toLocaleString("fr-FR")} (${ageText})`;
       staleBanner.hidden = !meta.is_stale;
       error.hidden = true;

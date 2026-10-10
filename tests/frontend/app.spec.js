@@ -151,7 +151,7 @@ test('keeps the site frames aligned and adds three visible characters without pa
 });
 
 test('renders French interface copy and French number formatting', async ({ page }) => {
-  await mockData(page);
+  await mockData(page, dataset, { ...meta, source_generated_at: new Date().toISOString() });
   await page.goto('./');
 
   await expect(page).toHaveTitle('Classement Overwatch');
@@ -172,7 +172,7 @@ test('renders French interface copy and French number formatting', async ({ page
   await expect(page.locator('.methodology summary')).toHaveText('Méthodologie et limites');
   await expect(page.locator('.site-footer')).toContainText('Données générées uniquement');
   await expect(page.locator('#freshness')).toContainText('Données générées le');
-  await expect(page.locator('#freshness')).toContainText('il y a');
+  await expect(page.locator('#freshness')).toContainText('à l’instant');
   const frenchDamage = await page.evaluate(() =>
     new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(1000));
   await expect(page.locator('#ranking-body tr').first().locator('td').nth(8)).toHaveText(frenchDamage);
