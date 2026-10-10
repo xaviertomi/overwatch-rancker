@@ -53,7 +53,7 @@ Run it twice before changing the policy. A candidate permanent exclusion require
 
 `results/classement.json` must have exactly `Résumé_Joueurs`, `Tank`, `Damage`, and `Support`. Summary entries are keyed directly by pseudo and contain only `Temps_Jeu_Total_Heures`. Ranking records contain the emitted numeric fields, finite values, scores in `[0, 100]`, and unique pseudos per hero. Empty hero lists are valid; a completely empty dataset is not.
 
-`docs/index.html`, `docs/style.css`, and `docs/app.js` form a relative-path static frontend. It provides role/hero controls, exact summary-object rendering, search, keyboard-sortable columns, stale metadata, accessible empty/error states, and mobile table scrolling. Visual sorting and search wrap records with their original zero-based index; the visible position is always the producer's canonical rank. JavaScript never recalculates scores, averages, totals, or rankings.
+`docs/index.html`, `docs/style.css`, and `docs/app.js` form a relative-path static frontend. It provides role/hero controls, exact summary-object rendering, search, keyboard-sortable columns, stale metadata, accessible empty/error states, and mobile table scrolling. Visual sorting and search wrap records with their original zero-based index; the visible position is always the producer's canonical rank. JavaScript never recalculates scores, averages, totals, or rankings. Increment the shared `v` query value in `docs/index.html` whenever either static asset changes, so browsers fetch the updated CSS and JavaScript.
 
 The required metadata pair is:
 

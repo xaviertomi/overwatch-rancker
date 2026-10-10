@@ -1,11 +1,13 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2] / "docs"
 
 class Handler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
+        path = urlsplit(path).path
         if path.startswith("/overwatch-rancker"):
             path = path[len("/overwatch-rancker"):]
         return str(ROOT / path.lstrip("/").replace("/", str(Path("/"))))

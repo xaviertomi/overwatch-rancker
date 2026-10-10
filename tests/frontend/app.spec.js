@@ -112,11 +112,32 @@ test('keeps empty roles usable and reports unavailable generated data', async ({
 });
 
 test('keeps the site frames aligned and adds three visible characters without page overflow', async ({ page }) => {
-  await mockData(page);
-  const baselineTableWidths = new Map([[320, 262], [390, 332], [768, 468], [1280, 885]]);
+  const dmonRows = [
+    {
+      ...record('Jhonasse', 73.33, 26.88),
+      'Winrate_%': 57.38,
+      KDA: 4.54,
+      Elims_Moyenne: 21.06,
+      Assists_Moyenne: 3.39,
+      Degats_Moyenne: 12441.39,
+      Soins_Moyenne: 276.71,
+    },
+    {
+      ...record('Thieuthieu', 26.67, 6.71),
+      'Winrate_%': 69.57,
+      KDA: 4.25,
+      Elims_Moyenne: 19.28,
+      Assists_Moyenne: 3.95,
+      Degats_Moyenne: 10773.79,
+      Soins_Moyenne: 527.29,
+    },
+  ];
+  await mockData(page, { ...dataset, Tank: { ...dataset.Tank, dmon: dmonRows } });
+  const baselineTableWidths = new Map([[320, 262], [390, 332], [768, 468], [1280, 885], [1568, 885]]);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('./');
   await expect(page.locator('#status')).toHaveText('Classement chargé');
+  await expect(page.locator('#hero-heading')).toHaveText('dmon');
 
   for (const [width, baselineWidth] of baselineTableWidths) {
     await page.setViewportSize({ width, height: 900 });
@@ -148,12 +169,27 @@ test('keeps the site frames aligned and adds three visible characters without pa
     expect(dimensions.tableVisibleWidth).toBeGreaterThanOrEqual(baselineWidth + dimensions.threeCh);
     expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth);
     expect(dimensions.framesAligned).toBeTruthy();
+
+    if (width === 1568) {
+      await expect(page.locator('#ranking-body tr td:last-child')).toHaveText(['276,71', '527,29']);
+      const statsVisible = await page.evaluate(() => {
+        const wrap = document.querySelector('.table-wrap').getBoundingClientRect();
+        return [...document.querySelectorAll('#ranking-body tr td:last-child')].every(cell => {
+          const range = document.createRange();
+          range.selectNodeContents(cell);
+          const text = range.getBoundingClientRect();
+          return text.left >= wrap.left && text.right <= wrap.right;
+        });
+      });
+      expect(statsVisible).toBeTruthy();
+    }
   }
 });
 
 test('renders French interface copy and French number formatting', async ({ page }) => {
   await mockData(page, dataset, { ...meta, source_generated_at: new Date().toISOString() });
   await page.goto('./');
+  await page.reload();
 
   await expect(page).toHaveTitle('Classement Overwatch');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
@@ -177,4 +213,6 @@ test('renders French interface copy and French number formatting', async ({ page
   const frenchDamage = await page.evaluate(() =>
     new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(1000));
   await expect(page.locator('#ranking-body tr').first().locator('td').nth(8)).toHaveText(frenchDamage);
+  await expect(page.locator('#hero-description')).toContainText('Classement canonique établi par le générateur.');
+  await expect(page.locator('#table-caption')).toHaveText('Classement canonique pour dva');
 });
