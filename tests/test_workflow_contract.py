@@ -39,7 +39,7 @@ def test_pages_trigger_ref_guard_permissions_and_deployment_gate():
     events = trigger(workflow)
     assert events["push"]["branches"] == ["main"]
     assert "workflow_dispatch" in events
-    assert events["schedule"] == [{"cron": "0 */6 * * *"}]
+    assert events["schedule"] == [{"cron": "0 1 * * *", "timezone": "Europe/Paris"}]
     assert "pull_request" not in events
     assert workflow["concurrency"]["cancel-in-progress"] is False
 

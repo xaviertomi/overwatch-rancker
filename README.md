@@ -98,7 +98,7 @@ The deterministic Playwright server maps `docs/` below `/overwatch-rancker/` so 
 
 ## Update, cache, and deployment
 
-The GitHub Actions workflow `.github/workflows/pages.yml` runs on pushes to `main`, manual dispatch, and `0 */6 * * *`. It does not run on pull requests. A manual or scheduled run on another ref fails explicitly.
+The GitHub Actions workflow `.github/workflows/pages.yml` runs on pushes to `main`, manual dispatch, and daily at 01:00 Europe/Paris (including daylight-saving changes). It does not run on pull requests. A manual or scheduled run on another ref fails explicitly.
 
 The collection job has only `contents: write` and read access needed for checkout/validation. The Pages job has `contents: read`, `pages: write`, and `id-token: write`. The workflow uses pinned full commit SHAs for checkout, Python setup, Pages configuration, artifact upload, and deployment.
 
