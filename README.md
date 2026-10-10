@@ -4,11 +4,11 @@ Static ranking site and the original Python calculation pipeline for a configure
 
 The presentation layer is new; `main.py`, `config.py`, `heroes.py`, and `viewer.py` remain available. The browser reads generated JSON only. It never calls Tkinter or OverFast.
 
-## Upstream, rights, and publication gate
+## Hosting and attribution
 
-This project is derived from [Zenitude71/overwatch-rancker](https://github.com/Zenitude71/overwatch-rancker). The upstream repository currently declares no license and provides no image provenance. That absence is not permission to redistribute code or assets. The inherited `images/` PNGs are therefore excluded from the default site artifact. The site uses a CSS initials/gradient placeholder; `--allow-hero-assets` and `vars.ALLOW_HERO_ASSETS` are disabled until written redistribution authorization or independently verifiable asset terms are recorded here.
+The upstream repository has no declared code license and does not document image provenance. This site is intended for non-commercial fan use. The `ALLOW_HERO_ASSETS` repository variable controls whether the original PNG files are copied unchanged into the site.
 
-`vars.PAGES_PUBLISH_ENABLED` is also intentionally absent/false until repository administration and publication authorization are established. Do not claim a Pages URL without checking the actual Pages API result.
+The footer includes Blizzard's Overwatch trademark notice and links to its [fansite copyright FAQ](https://www.blizzard.com/en-us/legal/28d5ebbf-c245-4408-8ba9-043dd5f056bf/legal-faq).
 
 ## Architecture
 
@@ -108,7 +108,7 @@ Only `classement.json` and `data-meta.json` are persisted on the dedicated `gene
 
 The repository-wide concurrency group uses `cancel-in-progress: false`: one active refresh is protected during cache replacement. GitHub retains one pending run and may replace an obsolete pending refresh with the newest request; this is safe because each refresh is idempotent and the active replacement is not cancelled.
 
-Pages publication and hero asset copying remain disabled until the rights and administration gates above are resolved. Do not infer deployment from the workflow file: verify actual fork workflow runs, scheduled-workflow metadata, generated-data commits, and Pages output before claiming an update or public URL.
+The Pages job deploys to the `github-pages` environment when `PAGES_PUBLISH_ENABLED=true`; the separate `ALLOW_HERO_ASSETS` variable controls image copying. After changing either variable, verify the workflow run and the actual Pages URL.
 
 ## Troubleshooting and upstream sync
 
