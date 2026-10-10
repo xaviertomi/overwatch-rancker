@@ -20,12 +20,19 @@ class FakeResponse:
         return self._payload
 
 
-def hero_payload(time=36000, eliminations=600, assists=60, deaths=100, games_won=30, games_played=50):
+def hero_payload(
+    time=36000, eliminations=600, assists=60, deaths=100,
+    games_won=30, games_played=50, games_lost=None, win_percentage=None,
+):
     stats = {
         "time_played": time, "eliminations": eliminations, "assists": assists,
         "deaths": deaths, "games_won": games_won, "games_played": games_played,
         "hero_damage_done": 100000, "healing_done": 5000,
     }
+    if games_lost is not None:
+        stats["games_lost"] = games_lost
+    if win_percentage is not None:
+        stats["win_percentage"] = win_percentage
     return {"heroes": {"dva": stats, "unknown-hero": dict(stats)}}
 
 
@@ -200,6 +207,76 @@ def test_main_report_and_output_contract(tmp_path, monkeypatch):
             "Soins_Moyenne": 416.67,
         },
     ]
+
+
+def test_main_keeps_quickplay_values_when_competitive_has_no_played_hero(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PLAYERS", ["Alpha-1"])
+    monkeypatch.setattr(config, "MODES", ["quickplay", "competitive"])
+    monkeypatch.setattr(config, "OUTPUT_DIR", str(tmp_path / "results"))
+    monkeypatch.setattr(config, "COLLECTION_POLICY_PATH", str(tmp_path / "policy.json"))
+    monkeypatch.setattr(config, "REQUEST_DELAY_SECONDS", 0)
+    (tmp_path / "policy.json").write_text(json.dumps({"version": 1, "excluded_requests": []}), encoding="utf-8")
+    payloads = {
+        ("Alpha-1", "quickplay"): hero_payload(
+            time=600, eliminations=80, assists=60, deaths=100,
+            games_won=30, games_played=50,
+        ),
+        ("Alpha-1", "competitive"): {},
+    }
+
+    def response(url, params, timeout):
+        player = url.rsplit("/", 3)[-3]
+        return FakeResponse(200, payloads[(player, params["gamemode"])])
+
+    with patch.object(main.requests, "get", side_effect=response):
+        report = main.main()
+
+    assert report["complete"] is True
+    data = json.loads((tmp_path / "results" / "classement.json").read_text(encoding="utf-8"))
+    row = data["Tank"]["dva"][0]
+    assert {
+        key: row[key] for key in (
+            "Temps_Jeu_Heures", "Winrate_%", "KDA", "Elims_Moyenne",
+            "Assists_Moyenne", "Degats_Moyenne", "Soins_Moyenne",
+        )
+    } == {
+        "Temps_Jeu_Heures": 0.17, "Winrate_%": 60.0, "KDA": 1.4,
+        "Elims_Moyenne": 80.0, "Assists_Moyenne": 60.0,
+        "Degats_Moyenne": 100000.0, "Soins_Moyenne": 5000.0,
+    }
+
+
+def test_single_mode_winrate_uses_loss_count_and_multi_mode_keeps_existing_formula(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PLAYERS", ["Alpha-1", "Bravo-2"])
+    monkeypatch.setattr(config, "MODES", ["quickplay", "competitive"])
+    monkeypatch.setattr(config, "OUTPUT_DIR", str(tmp_path / "results"))
+    monkeypatch.setattr(config, "COLLECTION_POLICY_PATH", str(tmp_path / "policy.json"))
+    monkeypatch.setattr(config, "REQUEST_DELAY_SECONDS", 0)
+    (tmp_path / "policy.json").write_text(json.dumps({"version": 1, "excluded_requests": []}), encoding="utf-8")
+    inconsistent_career_counts = {
+        "time": 600, "games_won": 21, "games_played": 77,
+        "games_lost": 36, "win_percentage": 52,
+    }
+    payloads = {
+        ("Alpha-1", "quickplay"): hero_payload(**inconsistent_career_counts),
+        ("Alpha-1", "competitive"): {},
+        # Both played modes retain the existing aggregated wins/played calculation.
+        ("Bravo-2", "quickplay"): hero_payload(**inconsistent_career_counts),
+        ("Bravo-2", "competitive"): hero_payload(**inconsistent_career_counts),
+    }
+
+    def response(url, params, timeout):
+        player = url.rsplit("/", 3)[-3]
+        return FakeResponse(200, payloads[(player, params["gamemode"])])
+
+    with patch.object(main.requests, "get", side_effect=response):
+        report = main.main()
+
+    assert report["complete"] is True
+    data = json.loads((tmp_path / "results" / "classement.json").read_text(encoding="utf-8"))
+    rows = {row["pseudo"]: row for row in data["Tank"]["dva"]}
+    assert rows["Alpha"]["Winrate_%"] == 53.25
+    assert rows["Bravo"]["Winrate_%"] == 27.27
 
 
 def test_main_failure_makes_complete_false(tmp_path, monkeypatch):

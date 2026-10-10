@@ -24,7 +24,8 @@ flowchart LR
   H --> E
 ```
 
-`main.py` preserves the original numerical contract: hero/mode payload precedence, the `heroes.HERO_ROLES` allowlist, pseudo extraction before the first hyphen, Quickplay/Competitive accumulation, positive-only total lookup, average × `time_played / 600` reconstruction, `games_won / 0.5` game estimation, 100% winrate cap, death denominator fallback of one, rounded emitted fields, threshold filtering with top-two fallback, per-hero relative min-max normalization, equal/reversed normalization result of one, role coefficients, score/time sorting, UTF-8 field names, omitted `Morts_Moyenne`, and summary ordering.
+`main.py` preserves the ranking contract: hero/mode payload precedence, the `heroes.HERO_ROLES` allowlist, pseudo extraction before the first hyphen, Quickplay/Competitive accumulation, positive-only total lookup, average × `time_played / 600` reconstruction, `games_won / 0.5` game estimation, 100% winrate cap, death denominator fallback of one, rounded emitted fields, threshold filtering with top-two fallback, per-hero relative min-max normalization, equal/reversed normalization result of one, role coefficients, score/time sorting, UTF-8 field names, omitted `Morts_Moyenne`, and summary ordering.
+Winrate preserves the existing aggregated `games_won / games_played` calculation when both modes have data. For a hero with data in only one mode, valid `games_played - games_lost` takes precedence, then the API `win_percentage`, then the existing wins/played fallback.
 
 The ranking is relative within each hero. Partial populations can change relative scores. Games and reconstructed averages can be estimates. A request is eligible only when it is configured and not present in `config/collection_policy.json`; that policy is explicit and auditable, not a silent exclusion mechanism.
 

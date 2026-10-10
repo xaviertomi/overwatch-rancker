@@ -128,10 +128,20 @@ def extract_stats(hero_data):
 
     games_won = flat.get("games_won", 0)
     games_played = flat.get("games_played", 0)
+    games_lost = flat.get("games_lost")
+    win_percentage = flat.get("win_percentage")
     if not isinstance(games_won, (int, float)) or isinstance(games_won, bool):
         games_won = 0
     if not isinstance(games_played, (int, float)) or isinstance(games_played, bool):
         games_played = 0
+    if not isinstance(games_lost, (int, float)) or isinstance(games_lost, bool) or games_lost < 0:
+        games_lost = None
+    if (
+        not isinstance(win_percentage, (int, float))
+        or isinstance(win_percentage, bool)
+        or not 0 <= win_percentage <= 100
+    ):
+        win_percentage = None
     if games_played == 0 and games_won > 0:
         games_played = games_won / 0.5
 
@@ -139,6 +149,8 @@ def extract_stats(hero_data):
         "time_played": time_played,
         "games_won": games_won,
         "games_played": games_played,
+        "games_lost": games_lost,
+        "win_percentage": win_percentage,
         "eliminations": get_total_or_reconstruct(["eliminations"], ["eliminations", "eliminations_avg"]),
         "assists": get_total_or_reconstruct(["assists"], ["assists", "assists_avg"]),
         "deaths": get_total_or_reconstruct(["deaths"], ["deaths", "deaths_avg"]),
@@ -207,6 +219,7 @@ def main():
     configured = len(config.PLAYERS) * len(config.MODES)
     outcomes = {}
     player_totals = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+    player_mode_win_stats = defaultdict(lambda: defaultdict(dict))
     player_global_time = defaultdict(float)
     seuil_heures = getattr(config, "MIN_HOURS_THRESHOLD", 0.0)
     print(f"=== DEBUT DU TRAITEMENT (Filtre: {seuil_heures} heures minimum) ===")
@@ -232,6 +245,9 @@ def main():
                     heroes_found += 1
                     mode_total_time += flat["time_played"]
                     player_global_time[pseudo] += flat["time_played"]
+                    player_mode_win_stats[pseudo][hero_key][mode] = (
+                        flat["games_lost"], flat["win_percentage"]
+                    )
                     for field in ("time_played", "games_won", "games_played", "eliminations", "assists", "deaths", "healing_done", "damage_done"):
                         player_totals[pseudo][hero_key][field] += flat[field]
             if heroes_found > 0:
@@ -249,6 +265,20 @@ def main():
             time_hours = totals["time_played"] / 3600
             time_10min = totals["time_played"] / 600
             winrate = min(100.0, totals["games_won"] / totals["games_played"] * 100) if totals["games_played"] > 0 else 0.0
+            mode_win_stats = player_mode_win_stats[pseudo][hero]
+            if len(mode_win_stats) == 1:
+                games_lost, source_winrate = next(iter(mode_win_stats.values()))
+                if (
+                    games_lost is not None
+                    and totals["games_played"] > 0
+                    and games_lost <= totals["games_played"]
+                ):
+                    winrate = (
+                        (totals["games_played"] - games_lost)
+                        / totals["games_played"] * 100
+                    )
+                elif source_winrate is not None:
+                    winrate = source_winrate
             deaths = totals["deaths"] if totals["deaths"] > 0 else 1
             raw_roles_data[heroes.HERO_ROLES[hero]][hero].append({
                 "pseudo": pseudo,
