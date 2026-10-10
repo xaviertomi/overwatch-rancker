@@ -31,14 +31,14 @@ The ranking is relative within each hero. Partial populations can change relativ
 
 ## Collection policy and probes
 
-There are 10 configured players × 2 modes = 20 logical requests. Two consecutive read-only probes on 2026-10-09 confirmed HTTP 404 twice for these four requests:
+There are 10 configured players × 2 modes = 20 logical requests. Two consecutive read-only probes on 2026-10-09 confirmed HTTP 404 for the remaining excluded requests:
 
-- `Colbern-2193` / `quickplay`
-- `Colbern-2193` / `competitive`
 - `lasthigh-21178` / `quickplay`
 - `lasthigh-21178` / `competitive`
 
-They are excluded in `config/collection_policy.json` with both observation timestamps, reasons, and `confirmed_twice` status. The current eligible population is 16 requests. Valid 200 responses with no recognized played heroes remain eligible as legitimate empty modes.
+`Colbern-2193` is eligible again after two fresh read-only probes returned HTTP 200 in both modes, with recognized hero data and no empty-mode result. Quickplay observations: `2026-10-10T19:55:55.986558Z` and `2026-10-10T19:56:17.622648Z` (50 recognized heroes); Competitive observations: `2026-10-10T19:55:56.581009Z` and `2026-10-10T19:56:18.176030Z` (10 recognized heroes).
+
+Only the two `lasthigh-21178` requests remain excluded in `config/collection_policy.json` with both observation timestamps and `confirmed_twice` status. The current eligible population is 18 requests. Valid 200 responses with no recognized played heroes remain eligible as legitimate empty modes.
 
 `main.main()` returns an auditable report with configured, excluded, expected, attempted, successful, private/unavailable, transient, invalid, and `complete` counters. Fresh publication requires every eligible request to be attempted successfully and the generated JSON to pass validation. Transport errors and HTTP 429/5xx retry at most three times with bounded exponential delays; 403/404 and other non-retryable statuses fail the eligible run immediately.
 
