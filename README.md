@@ -108,7 +108,7 @@ Only `classement.json` and `data-meta.json` are persisted on the dedicated `gene
 
 The repository-wide concurrency group uses `cancel-in-progress: false`: one active refresh is protected during cache replacement. GitHub retains one pending run and may replace an obsolete pending refresh with the newest request; this is safe because each refresh is idempotent and the active replacement is not cancelled.
 
-Do not enable Pages or hero assets until the rights and administration gates above are resolved. The current local checkout has no authenticated `gh` CLI and its remote remains the upstream repository, so no fork push, PR, Actions setting, cache branch, or deployment is claimed here.
+Pages and hero assets remain disabled until the rights and administration gates above are resolved. Do not infer deployment from the workflow file: verify actual fork workflow runs, scheduled-workflow metadata, cache commits, and Pages output after the PRs merge.
 
 ## Troubleshooting and upstream sync
 
@@ -118,7 +118,7 @@ Do not enable Pages or hero assets until the rights and administration gates abo
 - **Missing browser data:** verify `classement.json` and `data-meta.json` are relative files in the prepared `docs/` artifact.
 - **Policy changes:** run two fresh read-only probes, record both timestamps and the exact reason, then update only configured pairs.
 
-When a fork and authenticated CLI are available:
+For a fresh checkout of the fork, configure the original repository as `upstream` and synchronize only after reviewing upstream changes:
 
 ```text
 git remote add upstream https://github.com/Zenitude71/overwatch-rancker.git

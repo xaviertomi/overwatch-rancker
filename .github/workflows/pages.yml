@@ -63,7 +63,7 @@ jobs:
       - name: Persist only validated generated pair
         shell: bash
         run: |
-          rm -rf .generated-data
+          rm -rf .generated-data .generated-branch
           mkdir .generated-data
           cp .work/classement.json .generated-data/classement.json
           cp .work/data-meta.json .generated-data/data-meta.json
@@ -72,17 +72,17 @@ jobs:
           if git show-ref --verify --quiet refs/remotes/origin/generated-data; then
             git worktree add --detach .generated-branch origin/generated-data
             cp .generated-data/* .generated-branch/
-            git -C .generated-branch add classement.json data-meta.json
-            git -C .generated-branch commit -m "Refresh generated ranking data" || true
-            git -C .generated-branch push origin HEAD:generated-data
+            git -C .generated-branch add -- classement.json data-meta.json
+            git -C .generated-branch diff --cached --quiet || git -C .generated-branch commit -m "Refresh generated ranking data"
           else
-            git -C .generated-data init
-            git -C .generated-data checkout --orphan generated-data
-            git -C .generated-data add classement.json data-meta.json
-            git -C .generated-data commit -m "Initialize generated ranking cache"
-            git -C .generated-data remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
-            git -C .generated-data push origin generated-data
+            git worktree add --detach .generated-branch HEAD
+            git -C .generated-branch switch --orphan generated-data
+            git -C .generated-branch clean -fdx
+            cp .generated-data/* .generated-branch/
+            git -C .generated-branch add -- classement.json data-meta.json
+            git -C .generated-branch commit -m "Initialize generated ranking cache"
           fi
+          git -C .generated-branch push origin HEAD:generated-data
 
   pages:
     if: github.ref == 'refs/heads/main' && vars.PAGES_PUBLISH_ENABLED == 'true'
@@ -97,13 +97,18 @@ jobs:
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
         with:
           python-version: '3.12'
-      - name: Materialize generated pair from cache branch
+      - name: Materialize and validate generated site data
+        env:
+          ALLOW_HERO_ASSETS: ${{ vars.ALLOW_HERO_ASSETS }}
+        shell: bash
         run: |
           git fetch origin generated-data
-          git show origin/generated-data:classement.json > docs/classement.json
-          git show origin/generated-data:data-meta.json > docs/data-meta.json
-          python scripts/validate_json.py docs/classement.json
-          python -c 'from scripts.prepare_site import validate_metadata; validate_metadata("docs/data-meta.json")'
+          mkdir -p .artifact-data
+          git show origin/generated-data:classement.json > .artifact-data/classement.json
+          git show origin/generated-data:data-meta.json > .artifact-data/data-meta.json
+          args=(--dataset .artifact-data/classement.json --metadata .artifact-data/data-meta.json --output docs --repo-root .)
+          if [ "$ALLOW_HERO_ASSETS" = true ]; then args+=(--allow-hero-assets); fi
+          python scripts/prepare_site.py "${args[@]}"
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
