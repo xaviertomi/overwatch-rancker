@@ -10,13 +10,13 @@ class PolicyError(ValueError):
 
 
 def _timestamp(value):
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or not value.endswith("Z"):
         return False
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError:
         return False
-    return True
+    return parsed.utcoffset() is not None and parsed.utcoffset().total_seconds() == 0
 
 
 def validate_policy(policy, players, modes):
@@ -40,6 +40,8 @@ def validate_policy(policy, players, modes):
         observations = entry["observed_at"]
         if not isinstance(observations, list) or len(observations) != 2 or not all(_timestamp(item) for item in observations):
             raise PolicyError("policy requires two ISO-8601 observation timestamps")
+        if observations[0] == observations[1]:
+            raise PolicyError("policy observations must be distinct")
         if entry["confirmation_status"] != "confirmed_twice":
             raise PolicyError("policy confirmation_status must be confirmed_twice")
     return policy

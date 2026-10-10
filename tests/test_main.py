@@ -1,12 +1,9 @@
 import json
-from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 import config
-import heroes
 import main
 from scripts.collection_policy import PolicyError, validate_policy
 
@@ -24,11 +21,12 @@ class FakeResponse:
 
 
 def hero_payload(time=36000, eliminations=600, assists=60, deaths=100, games_won=30, games_played=50):
-    return {"heroes": {"dva": {
+    stats = {
         "time_played": time, "eliminations": eliminations, "assists": assists,
         "deaths": deaths, "games_won": games_won, "games_played": games_played,
         "hero_damage_done": 100000, "healing_done": 5000,
-    }}}
+    }
+    return {"heroes": {"dva": stats, "unknown-hero": dict(stats)}}
 
 
 def test_get_player_stats_classifies_retry_and_success(monkeypatch):
@@ -53,10 +51,27 @@ def test_get_player_stats_classifies_failures(monkeypatch):
         assert report["outcomes"][("A-1", "competitive")]["classification"] == "invalid_responses"
 
 
+def test_get_player_stats_classifies_bad_json_and_exhausted_transport(monkeypatch):
+    monkeypatch.setattr(main.time, "sleep", lambda _: None)
+    with patch.object(main.requests, "get", return_value=FakeResponse(200, json_error=True)):
+        report = {"outcomes": {}}
+        assert main.get_player_stats("A-1", "quickplay", report) is None
+        assert report["outcomes"][("A-1", "quickplay")]["classification"] == "invalid_responses"
+    with patch.object(main.requests, "get", side_effect=main.requests.ConnectionError("offline")) as request:
+        report = {"outcomes": {}}
+        assert main.get_player_stats("A-1", "quickplay", report) is None
+        assert request.call_count == config.MAX_REQUEST_ATTEMPTS
+        assert report["outcomes"][("A-1", "quickplay")]["classification"] == "transient_failures"
+
+
 def test_extract_stats_shapes_precedence_and_reconstruction():
     extracted = main.extract_stats({
         "totals": [{"key": "time_played", "value": 600}],
-        "average": [{"key": "eliminations", "value": 5}, {"key": "damage", "value": 100}],
+        "average": [
+            {"key": "eliminations", "value": 5},
+            {"key": "damage", "value": 100},
+            {"key": "malformed"},
+        ],
         "extra": {"assists": 2, "games_won": 3},
         "scalar": 9,
     })
@@ -67,6 +82,9 @@ def test_extract_stats_shapes_precedence_and_reconstruction():
     assert extracted["games_played"] == 6
     assert main.extract_stats({"average": {"healing": 2}, "time_played": -1})["healing_done"] == 0
     assert main.extract_stats({"average": "bad", "time_played": 0})["deaths"] == 0
+    assert main.extract_stats({})["time_played"] == 0
+    assert main.extract_stats({"time_played": 0})["time_played"] == 0
+    assert main.extract_stats({"time_played": -5})["time_played"] == -5
 
 
 def test_extract_stats_total_precedes_average_and_aliases():
@@ -80,6 +98,28 @@ def test_extract_stats_total_precedes_average_and_aliases():
     assert value["healing_done"] == 4
     assert value["deaths"] == 2
     assert value["assists"] == 1
+
+
+@pytest.mark.parametrize(
+    ("average_key", "output_key"),
+    [
+        ("eliminations", "eliminations"),
+        ("eliminations_avg", "eliminations"),
+        ("assists", "assists"),
+        ("assists_avg", "assists"),
+        ("deaths", "deaths"),
+        ("deaths_avg", "deaths"),
+        ("damage", "damage_done"),
+        ("hero_damage_done", "damage_done"),
+        ("damage_avg", "damage_done"),
+        ("healing", "healing_done"),
+        ("healing_done", "healing_done"),
+        ("healing_avg", "healing_done"),
+    ],
+)
+def test_average_reconstruction_aliases(average_key, output_key):
+    extracted = main.extract_stats({"time_played": 600, "average": {average_key: 2}})
+    assert extracted[output_key] == 2
 
 
 def test_calculate_norm_boundaries():
@@ -96,6 +136,21 @@ def test_policy_requires_confirmed_configured_pairs():
     malformed = {"version": 1, "excluded_requests": [{"player_id": "A-1", "gamemode": "quickplay"}]}
     with pytest.raises(PolicyError):
         validate_policy(malformed, ["A-1"], ["quickplay"])
+    confirmed = {
+        "version": 1,
+        "excluded_requests": [{
+            "player_id": "A-1",
+            "gamemode": "quickplay",
+            "reason": "confirmed twice",
+            "observed_at": ["2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z"],
+            "confirmation_status": "confirmed_twice",
+        }],
+    }
+    assert validate_policy(confirmed, ["A-1"], ["quickplay"]) == confirmed
+    with pytest.raises(PolicyError):
+        validate_policy({**confirmed, "excluded_requests": confirmed["excluded_requests"] * 2}, ["A-1"], ["quickplay"])
+    with pytest.raises(PolicyError):
+        validate_policy(confirmed, ["B-2"], ["quickplay"])
 
 
 def test_main_report_and_output_contract(tmp_path, monkeypatch):
@@ -126,6 +181,25 @@ def test_main_report_and_output_contract(tmp_path, monkeypatch):
     assert set(data) == {"Résumé_Joueurs", "Tank", "Damage", "Support"}
     assert "Morts_Moyenne" not in json.dumps(data)
     assert list(data["Résumé_Joueurs"]) == ["Alpha", "Bravo"]
+    assert set(data["Tank"]) == {"dva"}
+    assert data["Résumé_Joueurs"] == {
+        "Alpha": {"Temps_Jeu_Total_Heures": 15.0},
+        "Bravo": {"Temps_Jeu_Total_Heures": 2.0},
+    }
+    assert data["Tank"]["dva"] == [
+        {
+            "pseudo": "Alpha", "score": 66.67, "Temps_Jeu_Heures": 15.0,
+            "Winrate_%": 60.0, "KDA": 5.1, "Elims_Moyenne": 10.0,
+            "Assists_Moyenne": 1.33, "Degats_Moyenne": 2222.22,
+            "Soins_Moyenne": 111.11,
+        },
+        {
+            "pseudo": "Bravo", "score": 50.0, "Temps_Jeu_Heures": 2.0,
+            "Winrate_%": 60.0, "KDA": 1.6, "Elims_Moyenne": 8.33,
+            "Assists_Moyenne": 5.0, "Degats_Moyenne": 8333.33,
+            "Soins_Moyenne": 416.67,
+        },
+    ]
 
 
 def test_main_failure_makes_complete_false(tmp_path, monkeypatch):

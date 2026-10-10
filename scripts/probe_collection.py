@@ -52,9 +52,13 @@ def run_probe():
             if isinstance(payload, dict) and outcome["classification"] == "successful_responses":
                 path, container = _hero_path(payload, mode)
                 recognized = [key for key in container if key in heroes.HERO_ROLES]
+                played = [
+                    key for key in recognized
+                    if main.extract_stats(container[key])["time_played"] > 0
+                ]
                 row["hero_container_path"] = path
                 row["recognized_hero_count"] = len(recognized)
-                row["legitimately_empty_mode"] = len(recognized) == 0
+                row["legitimately_empty_mode"] = len(played) == 0
             rows.append(row)
     return {
         "generated_at": _iso_now(),

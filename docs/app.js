@@ -1,44 +1,371 @@
 (() => {
   "use strict";
+
   const roles = ["Tank", "Damage", "Support"];
-  const recordKeys = ["pseudo", "score", "Temps_Jeu_Heures", "Winrate_%", "KDA", "Elims_Moyenne", "Assists_Moyenne", "Degats_Moyenne", "Soins_Moyenne"];
-  const state = { data: null, meta: null, role: "Tank", hero: "", query: "", sortKey: "score", sortDirection: "desc" };
+  const heroRoles = {
+    dva: "Tank", doomfist: "Tank", "junker-queen": "Tank", mauga: "Tank",
+    orisa: "Tank", ramattra: "Tank", reinhardt: "Tank", roadhog: "Tank",
+    sigma: "Tank", winston: "Tank", "wrecking-ball": "Tank", zarya: "Tank",
+    hazard: "Tank", dmon: "Tank", domina: "Tank",
+    anran: "Damage", ashe: "Damage", bastion: "Damage", cassidy: "Damage",
+    echo: "Damage", genji: "Damage", hanzo: "Damage", junkrat: "Damage",
+    mei: "Damage", pharah: "Damage", reaper: "Damage", sierra: "Damage",
+    sojourn: "Damage", "soldier-76": "Damage", sombra: "Damage", symmetra: "Damage",
+    torbjorn: "Damage", tracer: "Damage", venture: "Damage", widowmaker: "Damage",
+    freja: "Damage", vendetta: "Damage", emre: "Damage", shion: "Damage",
+    ana: "Support", baptiste: "Support", brigitte: "Support", doctrine: "Support",
+    illari: "Support", juno: "Support", kiriko: "Support", lifeweaver: "Support",
+    lucio: "Support", mercy: "Support", moira: "Support", zenyatta: "Support",
+    mizuki: "Support", wuyang: "Support", "jetpack-cat": "Support",
+  };
+  const recordKeys = [
+    "pseudo", "score", "Temps_Jeu_Heures", "Winrate_%", "KDA",
+    "Elims_Moyenne", "Assists_Moyenne", "Degats_Moyenne", "Soins_Moyenne",
+  ];
+  const numericKeys = recordKeys.filter((key) => key !== "pseudo");
+  const state = {
+    data: null,
+    meta: null,
+    role: "Tank",
+    hero: "",
+    initialRole: "Tank",
+    initialHero: "",
+    query: "",
+    sortKey: "score",
+    sortDirection: "desc",
+  };
   const $ = (id) => document.getElementById(id);
-  const status = $("status"), error = $("error"), stale = $("stale-banner"), roleSelect = $("role-select"), heroSelect = $("hero-select"), search = $("search"), body = $("ranking-body"), summaryList = $("summary-list");
+  const status = $("status");
+  const error = $("error");
+  const staleBanner = $("stale-banner");
+  const freshness = $("freshness");
+  const roleSelect = $("role-select");
+  const heroSelect = $("hero-select");
+  const search = $("search");
+  const reset = $("reset");
+  const body = $("ranking-body");
+  const summaryList = $("summary-list");
   const finite = (value) => typeof value === "number" && Number.isFinite(value);
-  const fail = (message) => { error.textContent = message; error.hidden = false; status.textContent = "Ranking unavailable"; body.innerHTML = '<tr><td colspan="10" class="empty-state">No statistics rendered.</td></tr>'; summaryList.innerHTML = ""; };
-  const validDataset = (data) => {
-    if (!data || typeof data !== "object" || Object.keys(data).sort().join() !== ["Damage", "Résumé_Joueurs", "Support", "Tank"].join()) return false;
-    if (!data["Résumé_Joueurs"] || typeof data["Résumé_Joueurs"] !== "object" || Array.isArray(data["Résumé_Joueurs"])) return false;
-    let ranked = 0;
-    for (const [pseudo, entry] of Object.entries(data["Résumé_Joueurs"])) if (!pseudo.trim() || !entry || Object.keys(entry).length !== 1 || !finite(entry.Temps_Jeu_Total_Heures)) return false;
+  const sortedKeys = (object) => Object.keys(object).sort();
+
+  function setControlsEnabled(enabled) {
+    roleSelect.disabled = !enabled;
+    heroSelect.disabled = !enabled || heroSelect.options.length === 0;
+    search.disabled = !enabled;
+    reset.disabled = !enabled;
+    document.querySelectorAll("[data-sort]").forEach((button) => {
+      button.disabled = !enabled;
+    });
+  }
+
+  function fail(message) {
+    error.textContent = message;
+    error.hidden = false;
+    staleBanner.hidden = true;
+    status.textContent = "Ranking unavailable";
+    freshness.textContent = "";
+    body.innerHTML = '<tr><td colspan="10" class="empty-state">No statistics rendered.</td></tr>';
+    summaryList.replaceChildren();
+    setControlsEnabled(false);
+  }
+
+  function validDataset(data) {
+    const expectedRootKeys = ["Damage", "Résumé_Joueurs", "Support", "Tank"];
+    if (!data || typeof data !== "object" || Array.isArray(data) ||
+        sortedKeys(data).join("\0") !== expectedRootKeys.join("\0")) return false;
+
+    const summary = data["Résumé_Joueurs"];
+    if (!summary || typeof summary !== "object" || Array.isArray(summary)) return false;
+    for (const [pseudo, entry] of Object.entries(summary)) {
+      if (!pseudo.trim() || !entry || typeof entry !== "object" || Array.isArray(entry) ||
+          sortedKeys(entry).join("\0") !== "Temps_Jeu_Total_Heures" ||
+          !finite(entry.Temps_Jeu_Total_Heures)) return false;
+    }
+
+    let rankedCount = 0;
     for (const role of roles) {
-      if (!data[role] || typeof data[role] !== "object" || Array.isArray(data[role])) return false;
-      for (const records of Object.values(data[role])) {
-        if (!Array.isArray(records)) return false;
+      const roleData = data[role];
+      if (!roleData || typeof roleData !== "object" || Array.isArray(roleData)) return false;
+      for (const [hero, records] of Object.entries(roleData)) {
+        if (heroRoles[hero] !== role || !Array.isArray(records)) return false;
         const seen = new Set();
-        for (const record of records) { ranked++; if (!record || Object.keys(record).sort().join() !== recordKeys.slice().sort().join() || typeof record.pseudo !== "string" || !record.pseudo.trim() || seen.has(record.pseudo) || !finite(record.score) || record.score < 0 || record.score > 100 || recordKeys.slice(2).some((key) => !finite(record[key]))) return false; seen.add(record.pseudo); }
+        for (const record of records) {
+          rankedCount += 1;
+          if (!record || typeof record !== "object" || Array.isArray(record) ||
+              sortedKeys(record).join("\0") !== recordKeys.slice().sort().join("\0") ||
+              typeof record.pseudo !== "string" || !record.pseudo.trim() ||
+              seen.has(record.pseudo) || !finite(record.score) ||
+              record.score < 0 || record.score > 100 ||
+              numericKeys.some((key) => !finite(record[key]))) return false;
+          seen.add(record.pseudo);
+        }
       }
     }
-    return Object.keys(data["Résumé_Joueurs"]).length > 0 || ranked > 0;
-  };
-  const validMeta = (meta) => meta && typeof meta.generated_at === "string" && typeof meta.source_generated_at === "string" && typeof meta.run_id === "string" && meta.run_id.trim() && typeof meta.is_stale === "boolean" && !Number.isNaN(Date.parse(meta.generated_at)) && !Number.isNaN(Date.parse(meta.source_generated_at)) && Object.keys(meta).sort().join() === ["generated_at", "is_stale", "run_id", "source_generated_at"].join();
-  const heroesForRole = () => Object.keys(state.data?.[state.role] || {}).sort((a, b) => a.localeCompare(b));
-  const display = (value) => typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
-  const renderSummary = () => { const query = state.query.toLowerCase(); summaryList.innerHTML = ""; for (const [pseudo, entry] of Object.entries(state.data["Résumé_Joueurs"])) if (pseudo.toLowerCase().includes(query)) { const item = document.createElement("li"); item.innerHTML = `<span>${escapeHtml(pseudo)}</span><span class="summary-hours">${display(entry.Temps_Jeu_Total_Heures)} h</span>`; summaryList.append(item); } if (!summaryList.children.length) summaryList.innerHTML = '<li class="muted">No matching player summary.</li>'; };
-  const escapeHtml = (value) => { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; };
-  const renderHeroOptions = () => { const available = heroesForRole(); heroSelect.innerHTML = ""; available.forEach((hero) => { const option = document.createElement("option"); option.value = hero; option.textContent = hero; heroSelect.append(option); }); if (!available.includes(state.hero)) state.hero = available[0] || ""; heroSelect.value = state.hero; };
-  const updatePortrait = () => { const portrait = $("hero-portrait"); portrait.innerHTML = "<span>OW</span>"; if (!state.hero) return; const image = document.createElement("img"); image.alt = `${state.hero} portrait`; image.src = new URL(`./assets/heroes/${encodeURIComponent(state.hero)}.png`, document.baseURI).href; image.onerror = () => { image.remove(); }; portrait.append(image); };
-  const compare = (a, b) => { const av = a.record[state.sortKey], bv = b.record[state.sortKey]; const direction = state.sortDirection === "asc" ? 1 : -1; if (av !== bv) return (av - bv) * direction; if (a.canonicalRank !== b.canonicalRank) return a.canonicalRank - b.canonicalRank; return a.record.pseudo.localeCompare(b.record.pseudo); };
-  const renderTable = () => { $("hero-heading").textContent = state.hero || "No hero selected"; $("hero-role").textContent = state.role; $("hero-description").textContent = state.hero ? "Canonical producer rank; local controls change only visual order." : "This role has no generated heroes."; $("table-caption").textContent = state.hero ? `Canonical ranking for ${state.hero}` : "No hero ranking available"; updatePortrait(); body.innerHTML = ""; if (!state.hero) { body.innerHTML = '<tr><td colspan="10" class="empty-state">No generated heroes are available for this role.</td></tr>'; return; } const query = state.query.toLowerCase(); const records = state.data[state.role][state.hero].map((record, index) => ({ record, canonicalRank: index + 1 })).filter((item) => item.record.pseudo.toLowerCase().includes(query)).sort(compare); if (!records.length) { body.innerHTML = '<tr><td colspan="10" class="empty-state">No matching players.</td></tr>'; return; } for (const item of records) { const cells = [item.canonicalRank, item.record.pseudo, display(item.record.score), display(item.record.Temps_Jeu_Heures), `${display(item.record["Winrate_%"])}%`, display(item.record.KDA), display(item.record.Elims_Moyenne), display(item.record.Assists_Moyenne), display(item.record.Degats_Moyenne), display(item.record.Soins_Moyenne)]; const row = document.createElement("tr"); cells.forEach((value, index) => { const cell = document.createElement("td"); cell.textContent = value; if (index === 0) cell.className = "canonical"; row.append(cell); }); body.append(row); } };
-  const updateAriaSort = () => document.querySelectorAll("[data-sort]").forEach((button) => { button.parentElement.setAttribute("aria-sort", button.dataset.sort === state.sortKey ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none"); });
-  const render = () => { roleSelect.value = state.role; renderHeroOptions(); renderSummary(); renderTable(); updateAriaSort(); };
-  roleSelect.addEventListener("change", () => { state.role = roleSelect.value; state.hero = heroesForRole()[0] || ""; render(); });
-  heroSelect.addEventListener("change", () => { state.hero = heroSelect.value; renderTable(); });
-  search.addEventListener("input", () => { state.query = search.value; render(); });
-  $("reset").addEventListener("click", () => { state.role = "Tank"; state.hero = ""; state.query = ""; state.sortKey = "score"; state.sortDirection = "desc"; search.value = ""; render(); });
-  document.querySelectorAll("[data-sort]").forEach((button) => button.addEventListener("click", () => { if (state.sortKey === button.dataset.sort) state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc"; else { state.sortKey = button.dataset.sort; state.sortDirection = "desc"; } renderTable(); updateAriaSort(); }));
-  const load = async () => { try { const base = document.baseURI; const [dataResponse, metaResponse] = await Promise.all([fetch(new URL("./classement.json", base)), fetch(new URL("./data-meta.json", base))]); if (!dataResponse.ok || !metaResponse.ok) throw new Error("Generated files are missing or not reachable; run the next dataset update."); const [data, meta] = await Promise.all([dataResponse.json(), metaResponse.json()]); if (!validDataset(data) || !validMeta(meta)) throw new Error("Generated data is malformed or incompatible; run the next dataset update."); state.data = data; state.meta = meta; status.textContent = "Ranking data loaded"; freshness.textContent = `Source generated ${new Date(meta.source_generated_at).toLocaleString()}`; stale.hidden = !meta.is_stale; render(); } catch (caught) { fail(caught.message || "Generated data could not be loaded; run the next dataset update."); } };
-  const freshness = $("freshness");
+    return Object.keys(summary).length > 0 || rankedCount > 0;
+  }
+
+  function validUtcTimestamp(value) {
+    return typeof value === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value) &&
+      Number.isFinite(Date.parse(value));
+  }
+
+  function validMetadata(meta) {
+    const expected = ["generated_at", "is_stale", "run_id", "source_generated_at"];
+    return meta && typeof meta === "object" && !Array.isArray(meta) &&
+      sortedKeys(meta).join("\0") === expected.join("\0") &&
+      validUtcTimestamp(meta.generated_at) && validUtcTimestamp(meta.source_generated_at) &&
+      typeof meta.is_stale === "boolean" &&
+      typeof meta.run_id === "string" && meta.run_id.trim().length > 0;
+  }
+
+  roles.forEach((role) => {
+    const option = document.createElement("option");
+    option.value = role;
+    option.textContent = role;
+    roleSelect.append(option);
+  });
+
+  function heroesForRole() {
+    return sortedKeys(state.data?.[state.role] || {});
+  }
+
+  function formatNumber(value) {
+    return finite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
+  }
+
+  function renderSummary() {
+    const query = state.query.toLocaleLowerCase();
+    summaryList.replaceChildren();
+    for (const [pseudo, entry] of Object.entries(state.data["Résumé_Joueurs"])) {
+      if (!pseudo.toLocaleLowerCase().includes(query)) continue;
+      const item = document.createElement("li");
+      const name = document.createElement("span");
+      name.textContent = pseudo;
+      const hours = document.createElement("span");
+      hours.className = "summary-hours";
+      hours.textContent = `${formatNumber(entry.Temps_Jeu_Total_Heures)} h`;
+      item.append(name, hours);
+      summaryList.append(item);
+    }
+    if (!summaryList.children.length) {
+      const item = document.createElement("li");
+      item.className = "muted";
+      item.textContent = "No matching player summary.";
+      summaryList.append(item);
+    }
+  }
+
+  function renderHeroOptions() {
+    const available = heroesForRole();
+    heroSelect.replaceChildren();
+    for (const hero of available) {
+      const option = document.createElement("option");
+      option.value = hero;
+      option.textContent = hero;
+      heroSelect.append(option);
+    }
+    if (!available.includes(state.hero)) state.hero = available[0] || "";
+    heroSelect.value = state.hero;
+    heroSelect.disabled = available.length === 0;
+  }
+
+  function updatePortrait() {
+    const portrait = $("hero-portrait");
+    portrait.replaceChildren();
+    if (!state.hero) {
+      const placeholder = document.createElement("span");
+      placeholder.textContent = "OW";
+      portrait.append(placeholder);
+      return;
+    }
+    const image = document.createElement("img");
+    image.alt = `${state.hero} portrait`;
+    image.src = new URL(`./assets/heroes/${encodeURIComponent(state.hero)}.png`, document.baseURI).href;
+    image.onerror = () => {
+      image.remove();
+      const placeholder = document.createElement("span");
+      placeholder.textContent = "OW";
+      portrait.append(placeholder);
+    };
+    portrait.append(image);
+  }
+
+  function compareRows(left, right) {
+    const leftValue = left.record[state.sortKey];
+    const rightValue = right.record[state.sortKey];
+    const direction = state.sortDirection === "asc" ? 1 : -1;
+    if (leftValue !== rightValue) return (leftValue - rightValue) * direction;
+    if (left.canonicalRank !== right.canonicalRank) {
+      return left.canonicalRank - right.canonicalRank;
+    }
+    return left.record.pseudo.localeCompare(right.record.pseudo);
+  }
+
+  function emptyRow(message) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 10;
+    cell.className = "empty-state";
+    cell.textContent = message;
+    row.append(cell);
+    body.append(row);
+  }
+
+  function renderTable() {
+    $("hero-heading").textContent = state.hero || "No hero selected";
+    $("hero-role").textContent = state.role;
+    $("hero-description").textContent = state.hero
+      ? "Canonical producer rank. Games played and some averages may be estimated or reconstructed from source averages."
+      : "This role has no generated heroes.";
+    $("table-caption").textContent = state.hero
+      ? `Canonical ranking for ${state.hero}`
+      : "No hero ranking available";
+    updatePortrait();
+    body.replaceChildren();
+
+    if (!state.hero) {
+      emptyRow("No generated heroes are available for this role.");
+      return;
+    }
+
+    const sourceRecords = state.data[state.role][state.hero];
+    if (sourceRecords.length === 0) {
+      emptyRow("No players have been ranked for this hero.");
+      return;
+    }
+
+    const query = state.query.toLocaleLowerCase();
+    const visibleRecords = sourceRecords
+      .map((record, index) => ({ record, canonicalRank: index + 1 }))
+      .filter((item) => item.record.pseudo.toLocaleLowerCase().includes(query))
+      .sort(compareRows);
+    if (!visibleRecords.length) {
+      emptyRow("No matching players.");
+      return;
+    }
+
+    for (const item of visibleRecords) {
+      const values = [
+        item.canonicalRank,
+        item.record.pseudo,
+        formatNumber(item.record.score),
+        formatNumber(item.record.Temps_Jeu_Heures),
+        `${formatNumber(item.record["Winrate_%"])}%`,
+        formatNumber(item.record.KDA),
+        formatNumber(item.record.Elims_Moyenne),
+        formatNumber(item.record.Assists_Moyenne),
+        formatNumber(item.record.Degats_Moyenne),
+        formatNumber(item.record.Soins_Moyenne),
+      ];
+      const row = document.createElement("tr");
+      values.forEach((value, index) => {
+        const cell = document.createElement("td");
+        cell.textContent = String(value);
+        if (index === 0) cell.className = "canonical";
+        row.append(cell);
+      });
+      body.append(row);
+    }
+  }
+
+  function updateAriaSort() {
+    document.querySelectorAll("[data-sort]").forEach((button) => {
+      const value = button.dataset.sort === state.sortKey
+        ? (state.sortDirection === "asc" ? "ascending" : "descending")
+        : "none";
+      button.parentElement.setAttribute("aria-sort", value);
+    });
+  }
+
+  function render() {
+    roleSelect.value = state.role;
+    renderHeroOptions();
+    renderSummary();
+    renderTable();
+    updateAriaSort();
+    setControlsEnabled(true);
+  }
+
+  roleSelect.addEventListener("change", () => {
+    state.role = roleSelect.value;
+    state.hero = heroesForRole()[0] || "";
+    render();
+  });
+  heroSelect.addEventListener("change", () => {
+    state.hero = heroSelect.value;
+    renderTable();
+  });
+  search.addEventListener("input", () => {
+    state.query = search.value;
+    render();
+  });
+  reset.addEventListener("click", () => {
+    state.role = state.initialRole;
+    state.hero = state.initialHero;
+    state.query = "";
+    state.sortKey = "score";
+    state.sortDirection = "desc";
+    search.value = "";
+    render();
+  });
+  document.querySelectorAll("[data-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (state.sortKey === button.dataset.sort) {
+        state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        state.sortKey = button.dataset.sort;
+        state.sortDirection = "desc";
+      }
+      renderTable();
+      updateAriaSort();
+    });
+  });
+
+  async function load() {
+    setControlsEnabled(false);
+    try {
+      const base = document.baseURI;
+      const [datasetResponse, metadataResponse] = await Promise.all([
+        fetch(new URL("./classement.json", base)),
+        fetch(new URL("./data-meta.json", base)),
+      ]);
+      if (!datasetResponse.ok || !metadataResponse.ok) {
+        throw new Error("Generated files are missing or not reachable; run the next dataset update.");
+      }
+      const [data, meta] = await Promise.all([
+        datasetResponse.json(),
+        metadataResponse.json(),
+      ]);
+      if (!validDataset(data) || !validMetadata(meta)) {
+        throw new Error("Generated data is malformed or incompatible; run the next dataset update.");
+      }
+
+      state.data = data;
+      state.meta = meta;
+      state.initialRole = Object.keys(data.Tank).length > 0
+        ? "Tank"
+        : roles.find((role) => Object.keys(data[role]).length > 0) || "Tank";
+      state.role = state.initialRole;
+      state.initialHero = sortedKeys(data[state.initialRole])[0] || "";
+      state.hero = state.initialHero;
+      status.textContent = "Ranking data loaded";
+      const generatedDate = new Date(meta.source_generated_at);
+      const ageMs = Math.max(0, Date.now() - generatedDate.getTime());
+      const ageHours = Math.floor(ageMs / 3_600_000);
+      const ageText = ageHours < 24
+        ? `${ageHours} hour${ageHours === 1 ? "" : "s"} ago`
+        : `${Math.floor(ageHours / 24)} day${Math.floor(ageHours / 24) === 1 ? "" : "s"} ago`;
+      freshness.textContent = `Source generated ${generatedDate.toLocaleString()} (${ageText})`;
+      staleBanner.hidden = !meta.is_stale;
+      error.hidden = true;
+      render();
+    } catch (caught) {
+      fail(caught instanceof Error
+        ? caught.message
+        : "Generated data could not be loaded; run the next dataset update.");
+    }
+  }
+
   load();
 })();

@@ -3,7 +3,6 @@
 import argparse
 from datetime import datetime
 import json
-import math
 from pathlib import Path
 import shutil
 import sys
@@ -26,14 +25,19 @@ def validate_metadata(path_or_data):
     if not isinstance(value, dict) or set(value) != META_KEYS:
         raise ValueError("metadata keys do not match the contract")
     for key in ("generated_at", "source_generated_at"):
-        if not isinstance(value[key], str) or not value[key]:
-            raise ValueError(f"metadata {key} must be non-empty")
+        timestamp = value[key]
+        if not isinstance(timestamp, str) or not timestamp.endswith("Z"):
+            raise ValueError(f"metadata {key} must be an ISO-8601 UTC timestamp")
         try:
-            datetime.fromisoformat(value[key].replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(timestamp[:-1] + "+00:00")
         except ValueError as exc:
-            raise ValueError(f"metadata {key} must be ISO-8601") from exc
+            raise ValueError(f"metadata {key} must be an ISO-8601 UTC timestamp") from exc
+        if parsed.utcoffset() is None or parsed.utcoffset().total_seconds() != 0:
+            raise ValueError(f"metadata {key} must be UTC")
     if not isinstance(value["is_stale"], bool):
         raise ValueError("metadata is_stale must be boolean")
+    if not value["is_stale"] and value["generated_at"] != value["source_generated_at"]:
+        raise ValueError("fresh metadata timestamps must match")
     if not isinstance(value["run_id"], str) or not value["run_id"].strip():
         raise ValueError("metadata run_id must be non-empty")
     return value

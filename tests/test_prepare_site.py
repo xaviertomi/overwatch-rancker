@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.prepare_site import prepare_site
+from scripts.prepare_site import prepare_site, validate_metadata
 
 FIXTURES = Path(__file__).parent / "fixtures"
 META = {"generated_at": "2026-10-09T20:00:00Z", "source_generated_at": "2026-10-09T20:00:00Z", "is_stale": False, "run_id": "test-run"}
@@ -40,3 +40,16 @@ def test_prepare_site_asset_switch(tmp_path):
     output = tmp_path / "docs"
     prepare_site(dataset, metadata, output, tmp_path, allow_hero_assets=True)
     assert (output / "assets" / "heroes" / "dva.png").read_bytes() == b"png"
+
+
+def test_metadata_requires_utc_iso8601_and_exact_fields():
+    assert validate_metadata(META) == META
+    with pytest.raises(ValueError):
+        validate_metadata({**META, "generated_at": "2026-10-09T22:00:00+02:00"})
+    with pytest.raises(ValueError):
+        validate_metadata({**META, "extra": "not allowed"})
+    with pytest.raises(ValueError):
+        validate_metadata({
+            **META,
+            "generated_at": "2026-10-10T20:00:00Z",
+        })
