@@ -23,7 +23,7 @@ body {
   line-height: 1.5;
 }
 
-.shell { width: min(1280px, 100%); margin: 0 auto; }
+.shell { width: min(1320px, 100%); margin: 0 auto; }
 .site-header { border-bottom: 1px solid var(--border); background: rgb(18 20 23 / .86); }
 .header-content { display: flex; justify-content: space-between; gap: 2rem; align-items: end; padding: 3rem 0 2rem; }
 h1, h2, p { margin-top: 0; }

@@ -167,7 +167,9 @@ test('keeps the site frames aligned and adds three visible characters without pa
     });
     expect(dimensions.documentWidth).toBe(width);
     expect(dimensions.tableVisibleWidth).toBeGreaterThanOrEqual(baselineWidth + dimensions.threeCh);
-    expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth);
+    if (width < 1568) {
+      expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth);
+    }
     expect(dimensions.framesAligned).toBeTruthy();
 
     if (width === 1568) {
