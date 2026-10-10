@@ -23,7 +23,7 @@ body {
   line-height: 1.5;
 }
 
-.shell { width: min(1240px, calc(100% - 2rem)); margin: 0 auto; }
+.shell { width: min(1280px, 100%); margin: 0 auto; }
 .site-header { border-bottom: 1px solid var(--border); background: rgb(18 20 23 / .86); }
 .header-content { display: flex; justify-content: space-between; gap: 2rem; align-items: end; padding: 3rem 0 2rem; }
 h1, h2, p { margin-top: 0; }
@@ -117,7 +117,8 @@ summary { cursor: pointer; color: var(--accent-2); font-weight: 800; }
 .site-footer { border-top: 1px solid var(--border); padding: 1.5rem 0; color: var(--muted); font-size: .85rem; }
 
 @media (max-width: 760px) {
-  .shell { width: min(100% - 1rem, 1240px); }
+  .shell { width: calc(100% - .5rem); }
+  .panel { padding-inline: .5rem; }
   .header-content { display: grid; padding-top: 2rem; }
   .status-stack { text-align: left; }
   .control-grid, .content-grid { grid-template-columns: 1fr; }

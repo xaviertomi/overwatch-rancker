@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Overwatch Ranker</title>
+  <title>Classement Overwatch</title>
   <link rel="stylesheet" href="./style.css">
   <script src="./app.js" defer></script>
 </head>
@@ -11,32 +11,32 @@
   <header class="site-header">
     <div class="shell header-content">
       <div>
-        <p class="eyebrow">Overwatch performance index</p>
-        <h1>Overwatch Ranker</h1>
-        <p class="lede">A static, auditable view of the generated player rankings.</p>
+        <p class="eyebrow">Indice de performance Overwatch</p>
+        <h1>Classement Overwatch</h1>
+        <p class="lede">Une vue statique et vérifiable des classements générés des joueurs.</p>
       </div>
       <div class="status-stack" aria-live="polite">
-        <span id="status" class="status">Loading ranking data…</span>
+        <span id="status" class="status">Chargement des classements…</span>
         <span id="freshness" class="freshness"></span>
       </div>
     </div>
   </header>
   <main class="shell">
     <div id="error" class="notice error" role="alert" hidden></div>
-    <div id="stale-banner" class="notice stale" role="status" hidden>This dataset is stale-safe: the last complete collection is shown while the latest update is retried.</div>
+    <div id="stale-banner" class="notice stale" role="status" hidden>Les données sont anciennes : le dernier classement complet reste affiché pendant la nouvelle tentative de mise à jour.</div>
     <section class="controls panel" aria-labelledby="controls-title">
-      <h2 id="controls-title">Explore rankings</h2>
+      <h2 id="controls-title">Explorer les classements</h2>
       <div class="control-grid">
-        <label>Role<select id="role-select" aria-label="Role"></select></label>
-        <label>Hero<select id="hero-select" aria-label="Hero"></select></label>
-        <label class="search-control">Search player<input id="search" type="search" autocomplete="off" placeholder="Filter by pseudo"></label>
-        <button id="reset" type="button" class="button secondary">Reset view</button>
+        <label>Rôle<select id="role-select" aria-label="Rôle"></select></label>
+        <label>Héros<select id="hero-select" aria-label="Héros"></select></label>
+        <label class="search-control">Rechercher un joueur<input id="search" type="search" autocomplete="off" placeholder="Filtrer par pseudo"></label>
+        <button id="reset" type="button" class="button secondary">Réinitialiser la vue</button>
       </div>
     </section>
     <div class="content-grid">
       <aside class="summary panel" aria-labelledby="summary-title">
-        <h2 id="summary-title">Player summary</h2>
-        <p class="muted">Total recorded hours, independent of hero ranking.</p>
+        <h2 id="summary-title">Résumé des joueurs</h2>
+        <p class="muted">Heures de jeu cumulées, indépendamment du classement par héros.</p>
         <ul id="summary-list" class="summary-list"></ul>
       </aside>
       <section class="ranking panel" aria-labelledby="hero-heading">
@@ -44,41 +44,41 @@
           <div id="hero-portrait" class="portrait" aria-hidden="true"><span>OW</span></div>
           <div>
             <p class="eyebrow" id="hero-role">Tank</p>
-            <h2 id="hero-heading">No hero selected</h2>
-            <p id="hero-description" class="muted">Choose a role and hero to inspect the producer's canonical order.</p>
+            <h2 id="hero-heading">Aucun héros sélectionné</h2>
+            <p id="hero-description" class="muted">Choisissez un rôle et un héros pour consulter le classement canonique établi par le générateur.</p>
           </div>
         </div>
         <div class="table-wrap">
           <table id="ranking-table">
-            <caption id="table-caption">Canonical ranking for the selected hero</caption>
+            <caption id="table-caption">Classement canonique du héros sélectionné</caption>
             <thead>
               <tr>
                 <th scope="col">Position</th>
-                <th scope="col">Player</th>
+                <th scope="col">Joueur</th>
                 <th scope="col"><button type="button" data-sort="score">Score</button></th>
-                <th scope="col"><button type="button" data-sort="Temps_Jeu_Heures">Hours</button></th>
-                <th scope="col"><button type="button" data-sort="Winrate_%">Winrate</button></th>
+                <th scope="col"><button type="button" data-sort="Temps_Jeu_Heures">Heures</button></th>
+                <th scope="col"><button type="button" data-sort="Winrate_%" aria-label="Taux de victoire" title="Taux de victoire">Victoire (%)</button></th>
                 <th scope="col"><button type="button" data-sort="KDA">KDA</button></th>
-                <th scope="col"><button type="button" data-sort="Elims_Moyenne">Elims / 10m</button></th>
-                <th scope="col"><button type="button" data-sort="Assists_Moyenne">Assists / 10m</button></th>
-                <th scope="col"><button type="button" data-sort="Degats_Moyenne">Damage / 10m</button></th>
-                <th scope="col"><button type="button" data-sort="Soins_Moyenne">Healing / 10m</button></th>
+                <th scope="col"><button type="button" data-sort="Elims_Moyenne" aria-label="Éliminations par 10 minutes" title="Éliminations par 10 minutes">Élim. / 10 min</button></th>
+                <th scope="col"><button type="button" data-sort="Assists_Moyenne" aria-label="Assistances par 10 minutes" title="Assistances par 10 minutes">Assist. / 10 min</button></th>
+                <th scope="col"><button type="button" data-sort="Degats_Moyenne">Dégâts / 10 min</button></th>
+                <th scope="col"><button type="button" data-sort="Soins_Moyenne">Soins / 10 min</button></th>
               </tr>
             </thead>
-            <tbody id="ranking-body"><tr><td colspan="10" class="empty-state">Loading…</td></tr></tbody>
+            <tbody id="ranking-body"><tr><td colspan="10" class="empty-state">Chargement…</td></tr></tbody>
           </table>
         </div>
       </section>
     </div>
     <details class="methodology panel">
-      <summary>Methodology and limitations</summary>
-      <p>Scores are produced by the Python pipeline using relative min–max normalization within each hero. Games and averages may be estimated from the source API. Filtering and sorting here never recompute or change those values; the position column remains the producer's canonical rank.</p>
+      <summary>Méthodologie et limites</summary>
+      <p>Les scores sont calculés par le pipeline Python au moyen d’une normalisation min–max relative à chaque héros. Le nombre de parties et certaines moyennes peuvent être estimés ou reconstitués à partir des moyennes de l’API source. Le filtrage et le tri ne recalculent ni ne modifient ces valeurs ; la colonne Position conserve le rang canonique fourni par le générateur.</p>
     </details>
   </main>
   <footer class="site-footer">
     <div class="shell">
-      <p>Generated data only. No browser request is made to OverFast.</p>
-      <p>Overwatch™ ®2016 Blizzard Entertainment, Inc. All rights reserved. Overwatch is a trademark or registered trademark of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This non-commercial fan site is not affiliated with Blizzard Entertainment. See <a href="https://www.blizzard.com/en-us/legal/28d5ebbf-c245-4408-8ba9-043dd5f056bf/legal-faq">Blizzard's fansite copyright FAQ</a>.</p>
+      <p>Données générées uniquement. Le navigateur n’effectue aucune requête vers OverFast.</p>
+      <p>Overwatch™ ®2016 Blizzard Entertainment, Inc. Tous droits réservés. Overwatch est une marque commerciale ou une marque déposée de Blizzard Entertainment, Inc., aux États-Unis et/ou dans d’autres pays. Ce site de fans à but non lucratif n’est pas affilié à Blizzard Entertainment. Consultez la <a href="https://www.blizzard.com/en-us/legal/28d5ebbf-c245-4408-8ba9-043dd5f056bf/legal-faq">FAQ juridique de Blizzard sur le droit d’auteur des sites de fans</a>.</p>
     </div>
   </footer>
 </body>
