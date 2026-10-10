@@ -44,7 +44,7 @@ async function mockData(page, data = dataset, metadata = meta) {
 test('search and visual sorting preserve producer canonical ranks', async ({ page }) => {
   await mockData(page);
   await page.goto('./');
-  await expect(page.locator('#status')).toHaveText('Ranking data loaded');
+  await expect(page.locator('#status')).toHaveText('Classement chargé');
   await expect(page.locator('#hero-heading')).toHaveText('dva');
 
   await page.locator('#search').fill('charlie');
@@ -66,7 +66,7 @@ test('search and visual sorting preserve producer canonical ranks', async ({ pag
   await role.press('Enter');
   await expect(role).toHaveValue('Damage');
   await expect(page.locator('#hero-heading')).toHaveText('ashe');
-  await expect(page.locator('.empty-state')).toContainText('No players have been ranked');
+  await expect(page.locator('.empty-state')).toContainText('Aucun joueur n’a été classé');
 
   await page.locator('#reset').focus();
   await page.locator('#reset').press('Enter');
@@ -83,10 +83,10 @@ test('renders pseudo-keyed summary and stale data without changing scores', asyn
     source_generated_at: '2026-01-01T00:00:00Z',
   });
   await page.goto('./');
-  await expect(page.locator('#stale-banner')).toBeVisible();
+  await expect(page.locator('#stale-banner')).toContainText('Les données sont anciennes');
   await expect(page.locator('#summary-list')).toContainText('Alpha');
   await expect(page.locator('#summary-list')).toContainText('12 h');
-  await expect(page.locator('#freshness')).toContainText('2026');
+  await expect(page.locator('#freshness')).toContainText('Données générées le');
   await expect(page.locator('#ranking-body tr').first()).toContainText('80');
 });
 
@@ -98,26 +98,82 @@ test('keeps empty roles usable and reports unavailable generated data', async ({
     Support: {},
   });
   await page.goto('./');
-  await expect(page.locator('.empty-state')).toContainText('No players have been ranked');
+  await expect(page.locator('.empty-state')).toContainText('Aucun joueur n’a été classé');
   await page.locator('#role-select').selectOption('Support');
-  await expect(page.locator('.empty-state')).toContainText('No generated heroes');
+  await expect(page.locator('.empty-state')).toContainText('Aucun héros généré');
   await expect(page.locator('#role-select')).toBeEnabled();
 
   await page.unrouteAll();
+  await page.route('**/classement.json', route => route.fulfill({ status: 404, body: '' }));
+  await page.route('**/data-meta.json', route => route.fulfill({ status: 404, body: '' }));
   await page.goto('./');
-  await expect(page.locator('#error')).toContainText('run the next dataset update');
-  await expect(page.locator('.empty-state')).toContainText('No statistics rendered');
+  await expect(page.locator('#error')).toContainText('Fichiers générés introuvables');
+  await expect(page.locator('.empty-state')).toHaveText('Aucune statistique affichée.');
 });
 
-test('keeps ranking table horizontally scrollable on mobile', async ({ page }) => {
+test('keeps the site frames aligned and adds three visible characters without page overflow', async ({ page }) => {
   await mockData(page);
+  const baselineTableWidths = new Map([[320, 262], [390, 332], [768, 468], [1280, 885]]);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('./');
-  await expect(page.locator('#status')).toHaveText('Ranking data loaded');
-  const dimensions = await page.locator('.table-wrap').evaluate((node) => ({
-    clientWidth: node.clientWidth,
-    scrollWidth: node.scrollWidth,
-  }));
-  expect(dimensions.scrollWidth).toBeGreaterThan(dimensions.clientWidth);
-  await expect(page.locator('#reset')).toBeVisible();
+  await expect(page.locator('#status')).toHaveText('Classement chargé');
+
+  for (const [width, baselineWidth] of baselineTableWidths) {
+    await page.setViewportSize({ width, height: 900 });
+    const dimensions = await page.evaluate(() => {
+      const main = document.querySelector('main.shell').getBoundingClientRect();
+      const selectors = ['.site-header .shell', 'main.shell', '.content-grid', '.site-footer .shell'];
+      const frames = selectors.map(selector => {
+        const rect = document.querySelector(selector).getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      const wrap = document.querySelector('.table-wrap');
+      const probe = document.createElement('span');
+      probe.style.cssText = `position:fixed;visibility:hidden;width:3ch;font:${getComputedStyle(document.querySelector('main.shell')).font};white-space:nowrap;`;
+      document.body.append(probe);
+      const threeCh = probe.getBoundingClientRect().width;
+      probe.remove();
+      return {
+        viewportWidth: innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        tableClientWidth: wrap.clientWidth,
+        tableScrollWidth: wrap.scrollWidth,
+        threeCh,
+        framesAligned: frames.every(frame =>
+          Math.abs(frame.left - main.left) < 0.5 && Math.abs(frame.right - main.right) < 0.5),
+      };
+    });
+    expect(dimensions.documentWidth).toBe(width);
+    expect(dimensions.tableClientWidth).toBeGreaterThanOrEqual(baselineWidth + dimensions.threeCh - 0.5);
+    expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth);
+    expect(dimensions.framesAligned).toBeTruthy();
+  }
+});
+
+test('renders French interface copy and French number formatting', async ({ page }) => {
+  await mockData(page);
+  await page.goto('./');
+
+  await expect(page).toHaveTitle('Classement Overwatch');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  await expect(page.locator('#status')).toHaveText('Classement chargé');
+  await expect(page.locator('#role-select option')).toHaveText(['Tank', 'Dégâts', 'Soutien']);
+  await expect(page.locator('#role-select')).toHaveAttribute('aria-label', 'Rôle');
+  await expect(page.locator('#hero-select')).toHaveAttribute('aria-label', 'Héros');
+  await expect(page.locator('#search')).toHaveAttribute('placeholder', 'Filtrer par pseudo');
+  await expect(page.locator('#reset')).toHaveText('Réinitialiser la vue');
+  await expect(page.locator('#controls-title')).toHaveText('Explorer les classements');
+  await expect(page.locator('#summary-title')).toHaveText('Résumé des joueurs');
+  await expect(page.locator('[data-sort="Winrate_%"]')).toHaveAttribute('aria-label', 'Taux de victoire');
+  await expect(page.locator('thead')).toContainText('Victoire (%)');
+  await expect(page.locator('thead')).toContainText('Élim. / 10 min');
+  await expect(page.locator('thead')).toContainText('Assist. / 10 min');
+  await expect(page.locator('thead')).toContainText('Dégâts / 10 min');
+  await expect(page.locator('.methodology summary')).toHaveText('Méthodologie et limites');
+  await expect(page.locator('.site-footer')).toContainText('Données générées uniquement');
+  await expect(page.locator('#freshness')).toContainText('Données générées le');
+  await expect(page.locator('#freshness')).toContainText('il y a');
+  const frenchDamage = await page.evaluate(() =>
+    new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(1000));
+  await expect(page.locator('#ranking-body tr').first().locator('td').nth(8)).toHaveText(frenchDamage);
 });

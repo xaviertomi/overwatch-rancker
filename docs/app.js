@@ -2,6 +2,7 @@
   "use strict";
 
   const roles = ["Tank", "Damage", "Support"];
+  const roleLabels = { Tank: "Tank", Damage: "Dégâts", Support: "Soutien" };
   const heroRoles = {
     dva: "Tank", doomfist: "Tank", "junker-queen": "Tank", mauga: "Tank",
     orisa: "Tank", ramattra: "Tank", reinhardt: "Tank", roadhog: "Tank",
@@ -62,9 +63,9 @@
     error.textContent = message;
     error.hidden = false;
     staleBanner.hidden = true;
-    status.textContent = "Ranking unavailable";
+    status.textContent = "Classement indisponible";
     freshness.textContent = "";
-    body.innerHTML = '<tr><td colspan="10" class="empty-state">No statistics rendered.</td></tr>';
+    body.innerHTML = '<tr><td colspan="10" class="empty-state">Aucune statistique affichée.</td></tr>';
     summaryList.replaceChildren();
     setControlsEnabled(false);
   }
@@ -122,7 +123,7 @@
   roles.forEach((role) => {
     const option = document.createElement("option");
     option.value = role;
-    option.textContent = role;
+    option.textContent = roleLabels[role];
     roleSelect.append(option);
   });
 
@@ -131,7 +132,7 @@
   }
 
   function formatNumber(value) {
-    return finite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
+    return finite(value) ? value.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : "—";
   }
 
   function renderSummary() {
@@ -151,7 +152,7 @@
     if (!summaryList.children.length) {
       const item = document.createElement("li");
       item.className = "muted";
-      item.textContent = "No matching player summary.";
+      item.textContent = "Aucun joueur ne correspond à la recherche.";
       summaryList.append(item);
     }
   }
@@ -180,7 +181,7 @@
       return;
     }
     const image = document.createElement("img");
-    image.alt = `${state.hero} portrait`;
+    image.alt = `${state.hero}, portrait`;
     image.src = new URL(`./assets/heroes/${encodeURIComponent(state.hero)}.png`, document.baseURI).href;
     image.onerror = () => {
       image.remove();
@@ -213,25 +214,25 @@
   }
 
   function renderTable() {
-    $("hero-heading").textContent = state.hero || "No hero selected";
-    $("hero-role").textContent = state.role;
+    $("hero-heading").textContent = state.hero || "Aucun héros sélectionné";
+    $("hero-role").textContent = roleLabels[state.role];
     $("hero-description").textContent = state.hero
-      ? "Canonical producer rank. Games played and some averages may be estimated or reconstructed from source averages."
-      : "This role has no generated heroes.";
+      ? "Classement canonique établi par le générateur. Le nombre de parties et certaines moyennes peuvent être estimés ou reconstitués à partir des moyennes de l’API source."
+      : "Ce rôle ne contient aucun héros dans les données générées.";
     $("table-caption").textContent = state.hero
-      ? `Canonical ranking for ${state.hero}`
-      : "No hero ranking available";
+      ? `Classement canonique pour ${state.hero}`
+      : "Aucun classement de héros disponible";
     updatePortrait();
     body.replaceChildren();
 
     if (!state.hero) {
-      emptyRow("No generated heroes are available for this role.");
+      emptyRow("Aucun héros généré n’est disponible pour ce rôle.");
       return;
     }
 
     const sourceRecords = state.data[state.role][state.hero];
     if (sourceRecords.length === 0) {
-      emptyRow("No players have been ranked for this hero.");
+      emptyRow("Aucun joueur n’a été classé pour ce héros.");
       return;
     }
 
@@ -241,7 +242,7 @@
       .filter((item) => item.record.pseudo.toLocaleLowerCase().includes(query))
       .sort(compareRows);
     if (!visibleRecords.length) {
-      emptyRow("No matching players.");
+      emptyRow("Aucun joueur ne correspond à la recherche.");
       return;
     }
 
@@ -331,14 +332,14 @@
         fetch(new URL("./data-meta.json", base)),
       ]);
       if (!datasetResponse.ok || !metadataResponse.ok) {
-        throw new Error("Generated files are missing or not reachable; run the next dataset update.");
+        throw new Error("Fichiers générés introuvables ou inaccessibles ; exécutez la prochaine mise à jour des données.");
       }
       const [data, meta] = await Promise.all([
         datasetResponse.json(),
         metadataResponse.json(),
       ]);
       if (!validDataset(data) || !validMetadata(meta)) {
-        throw new Error("Generated data is malformed or incompatible; run the next dataset update.");
+        throw new Error("Données générées mal formées ou incompatibles ; exécutez la prochaine mise à jour des données.");
       }
 
       state.data = data;
@@ -349,21 +350,23 @@
       state.role = state.initialRole;
       state.initialHero = sortedKeys(data[state.initialRole])[0] || "";
       state.hero = state.initialHero;
-      status.textContent = "Ranking data loaded";
+      status.textContent = "Classement chargé";
       const generatedDate = new Date(meta.source_generated_at);
       const ageMs = Math.max(0, Date.now() - generatedDate.getTime());
       const ageHours = Math.floor(ageMs / 3_600_000);
+      const ageDays = Math.floor(ageHours / 24);
       const ageText = ageHours < 24
-        ? `${ageHours} hour${ageHours === 1 ? "" : "s"} ago`
-        : `${Math.floor(ageHours / 24)} day${Math.floor(ageHours / 24) === 1 ? "" : "s"} ago`;
-      freshness.textContent = `Source generated ${generatedDate.toLocaleString()} (${ageText})`;
+        ? `il y a ${ageHours} ${ageHours === 1 ? "heure" : "heures"}`
+        : `il y a ${ageDays} ${ageDays === 1 ? "jour" : "jours"}`;
+      freshness.textContent = `Données générées le ${generatedDate.toLocaleString("fr-FR")} (${ageText})`;
       staleBanner.hidden = !meta.is_stale;
       error.hidden = true;
       render();
     } catch (caught) {
-      fail(caught instanceof Error
+      fail(caught instanceof Error &&
+        (caught.message.startsWith("Fichiers générés") || caught.message.startsWith("Données générées"))
         ? caught.message
-        : "Generated data could not be loaded; run the next dataset update.");
+        : "Les données générées n’ont pas pu être chargées. Réessayez après la prochaine mise à jour.");
     }
   }
 
