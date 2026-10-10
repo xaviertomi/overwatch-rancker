@@ -209,7 +209,6 @@ def test_main_report_and_output_contract(tmp_path, monkeypatch):
     ]
 
 
-
 def test_main_keeps_quickplay_values_when_competitive_has_no_played_hero(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "PLAYERS", ["Alpha-1"])
     monkeypatch.setattr(config, "MODES", ["quickplay", "competitive"])
@@ -278,6 +277,7 @@ def test_single_mode_winrate_uses_loss_count_and_multi_mode_keeps_existing_formu
     rows = {row["pseudo"]: row for row in data["Tank"]["dva"]}
     assert rows["Alpha"]["Winrate_%"] == 53.25
     assert rows["Bravo"]["Winrate_%"] == 27.27
+
 
 def test_main_failure_makes_complete_false(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "PLAYERS", ["Alpha-1"])
