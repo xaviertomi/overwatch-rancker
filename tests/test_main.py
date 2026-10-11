@@ -160,6 +160,55 @@ def test_policy_requires_confirmed_configured_pairs():
         validate_policy(confirmed, ["B-2"], ["quickplay"])
 
 
+def test_score_winrate_adjustment_uses_games_and_keeps_neutral_rate():
+    assert main._adjust_winrate_for_score(100.0, 2) == pytest.approx(58.3333333333)
+    assert main._adjust_winrate_for_score(60.0, 100) == pytest.approx(59.0909090909)
+    assert main._adjust_winrate_for_score(50.0, 2) == 50.0
+    for games_played in (0, -1, float("nan"), float("inf"), None):
+        assert main._adjust_winrate_for_score(75.0, games_played) == 75.0
+
+
+def test_score_uses_adjusted_winrate_but_emits_raw_winrate(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PLAYERS", ["Few-1", "Many-2"])
+    monkeypatch.setattr(config, "MODES", ["quickplay", "competitive"])
+    monkeypatch.setattr(config, "OUTPUT_DIR", str(tmp_path / "results"))
+    monkeypatch.setattr(config, "COLLECTION_POLICY_PATH", str(tmp_path / "policy.json"))
+    monkeypatch.setattr(config, "REQUEST_DELAY_SECONDS", 0)
+    monkeypatch.setattr(config, "MIN_HOURS_THRESHOLD", 0.0)
+    monkeypatch.setattr(config, "ROLE_CONFIGS", {
+        role: {"Winrate_%": 1.0} for role in ("Tank", "Damage", "Support")
+    })
+    (tmp_path / "policy.json").write_text(
+        json.dumps({"version": 1, "excluded_requests": []}), encoding="utf-8"
+    )
+    payloads = {
+        ("Few-1", "quickplay"): hero_payload(
+            time=600, games_won=2, games_played=2, games_lost=0, win_percentage=100,
+        ),
+        ("Few-1", "competitive"): {},
+        ("Many-2", "quickplay"): hero_payload(
+            time=600, games_won=100, games_played=100, games_lost=0, win_percentage=100,
+        ),
+        ("Many-2", "competitive"): {},
+    }
+
+    def response(url, params, timeout):
+        player = url.rsplit("/", 3)[-3]
+        return FakeResponse(200, payloads[(player, params["gamemode"])])
+
+    with patch.object(main.requests, "get", side_effect=response):
+        report = main.main()
+
+    assert report["complete"] is True
+    data = json.loads((tmp_path / "results" / "classement.json").read_text(encoding="utf-8"))
+    rows = {row["pseudo"]: row for row in data["Tank"]["dva"]}
+    assert rows["Few"]["Winrate_%"] == rows["Many"]["Winrate_%"] == 100.0
+    assert rows["Few"]["score"] == 0.0
+    assert rows["Many"]["score"] == 100.0
+    assert "_score_winrate" not in rows["Few"]
+
+
+
 def test_main_report_and_output_contract(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "PLAYERS", ["Alpha-1", "Bravo-2"])
     monkeypatch.setattr(config, "MODES", ["quickplay", "competitive"])
@@ -201,7 +250,7 @@ def test_main_report_and_output_contract(tmp_path, monkeypatch):
             "Soins_Moyenne": 111.11,
         },
         {
-            "pseudo": "Bravo", "score": 50.0, "Temps_Jeu_Heures": 2.0,
+            "pseudo": "Bravo", "score": 33.33, "Temps_Jeu_Heures": 2.0,
             "Winrate_%": 60.0, "KDA": 1.6, "Elims_Moyenne": 8.33,
             "Assists_Moyenne": 5.0, "Degats_Moyenne": 8333.33,
             "Soins_Moyenne": 416.67,
