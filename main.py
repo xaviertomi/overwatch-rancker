@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import time
 from collections import defaultdict
@@ -9,6 +10,8 @@ import requests
 import config
 import heroes
 from scripts.collection_policy import load_policy
+
+WINRATE_PRIOR_GAMES = 10.0
 
 
 def _record_outcome(collection_report, player_id, gamemode, **outcome):
@@ -164,6 +167,23 @@ def extract_stats(hero_data):
     }
 
 
+def _adjust_winrate_for_score(winrate_percent, games_played):
+    """Shrink the score's winrate input toward 50% for small samples."""
+    if (
+        not isinstance(games_played, (int, float))
+        or isinstance(games_played, bool)
+        or not math.isfinite(games_played)
+        or games_played <= 0
+        or not isinstance(winrate_percent, (int, float))
+        or isinstance(winrate_percent, bool)
+        or not math.isfinite(winrate_percent)
+        or not 0 <= winrate_percent <= 100
+    ):
+        return winrate_percent
+    confidence = games_played / (games_played + WINRATE_PRIOR_GAMES)
+    return 50.0 + confidence * (winrate_percent - 50.0)
+
+
 def calculate_norm(val, min_v, max_v, is_inv=False):
     """Calculate a clamped relative value between zero and one."""
     if min_v >= max_v:
@@ -284,6 +304,7 @@ def main():
                 "pseudo": pseudo,
                 "Temps_Jeu_Heures": round(time_hours, 2),
                 "Winrate_%": round(winrate, 2),
+                "_score_winrate": _adjust_winrate_for_score(winrate, totals["games_played"]),
                 "KDA": round((totals["eliminations"] + totals["assists"]) / deaths, 2),
                 "Elims_Moyenne": round(totals["eliminations"] / time_10min if time_10min > 0 else 0, 2),
                 "Assists_Moyenne": round(totals["assists"] / time_10min if time_10min > 0 else 0, 2),
@@ -315,8 +336,12 @@ def main():
                 for stat_name, coef in coefs.items():
                     if coef == 0 or stat_name not in player:
                         continue
-                    values = [item.get(stat_name, 0) for item in players_list]
-                    score_total += calculate_norm(player.get(stat_name, 0), min(values), max(values), stat_name in config.INVERTED_METRICS) * coef
+                    score_stat_name = "_score_winrate" if stat_name == "Winrate_%" else stat_name
+                    values = [item.get(score_stat_name, 0) for item in players_list]
+                    score_total += calculate_norm(
+                        player.get(score_stat_name, 0), min(values), max(values),
+                        stat_name in config.INVERTED_METRICS,
+                    ) * coef
                 player["score"] = round((score_total / total_coef) * 100, 2) if total_coef > 0 else 0.0
             players_list.sort(key=lambda item: (item["score"], item["Temps_Jeu_Heures"]), reverse=True)
             final_json[role][hero] = [{key: player[key] for key in (
