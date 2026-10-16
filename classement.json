@@ -1,19 +1,19 @@
 {
   "Résumé_Joueurs": {
     "Nao": {
-      "Temps_Jeu_Total_Heures": 1426.69
+      "Temps_Jeu_Total_Heures": 1427.87
     },
     "Jhonasse": {
       "Temps_Jeu_Total_Heures": 989.05
     },
     "Zenitude": {
-      "Temps_Jeu_Total_Heures": 759.62
+      "Temps_Jeu_Total_Heures": 760.06
     },
     "leCongolais": {
       "Temps_Jeu_Total_Heures": 752.39
     },
     "Thieuthieu": {
-      "Temps_Jeu_Total_Heures": 560.72
+      "Temps_Jeu_Total_Heures": 561.28
     },
     "Aupif": {
       "Temps_Jeu_Total_Heures": 555.63
@@ -25,7 +25,7 @@
       "Temps_Jeu_Total_Heures": 505.61
     },
     "Colbern": {
-      "Temps_Jeu_Total_Heures": 447.92
+      "Temps_Jeu_Total_Heures": 448.06
     }
   },
   "Tank": {
@@ -347,18 +347,18 @@
     "reinhardt": [
       {
         "pseudo": "Zenitude",
-        "score": 98.84,
-        "Temps_Jeu_Heures": 69.44,
-        "Winrate_%": 60.29,
+        "score": 99.07,
+        "Temps_Jeu_Heures": 69.81,
+        "Winrate_%": 60.24,
         "KDA": 3.05,
         "Elims_Moyenne": 17.78,
-        "Assists_Moyenne": 1.9,
-        "Degats_Moyenne": 10528.52,
+        "Assists_Moyenne": 1.91,
+        "Degats_Moyenne": 10520.3,
         "Soins_Moyenne": 0.0
       },
       {
         "pseudo": "Jhonasse",
-        "score": 50.32,
+        "score": 50.41,
         "Temps_Jeu_Heures": 156.56,
         "Winrate_%": 56.19,
         "KDA": 2.64,
@@ -369,7 +369,7 @@
       },
       {
         "pseudo": "Nao",
-        "score": 47.2,
+        "score": 47.28,
         "Temps_Jeu_Heures": 21.83,
         "Winrate_%": 54.32,
         "KDA": 2.71,
@@ -380,7 +380,7 @@
       },
       {
         "pseudo": "badslayeur",
-        "score": 35.35,
+        "score": 35.41,
         "Temps_Jeu_Heures": 32.36,
         "Winrate_%": 56.17,
         "KDA": 2.63,
@@ -391,7 +391,7 @@
       },
       {
         "pseudo": "Tomix",
-        "score": 33.18,
+        "score": 33.22,
         "Temps_Jeu_Heures": 23.93,
         "Winrate_%": 52.63,
         "KDA": 2.53,
@@ -402,7 +402,7 @@
       },
       {
         "pseudo": "leCongolais",
-        "score": 10.15,
+        "score": 10.18,
         "Temps_Jeu_Heures": 44.77,
         "Winrate_%": 55.35,
         "KDA": 2.25,
@@ -577,7 +577,7 @@
     "zarya": [
       {
         "pseudo": "Tomix",
-        "score": 59.7,
+        "score": 60.22,
         "Temps_Jeu_Heures": 17.4,
         "Winrate_%": 42.15,
         "KDA": 4.18,
@@ -588,7 +588,7 @@
       },
       {
         "pseudo": "leCongolais",
-        "score": 58.58,
+        "score": 58.82,
         "Temps_Jeu_Heures": 39.98,
         "Winrate_%": 49.64,
         "KDA": 3.66,
@@ -599,13 +599,13 @@
       },
       {
         "pseudo": "Zenitude",
-        "score": 57.55,
-        "Temps_Jeu_Heures": 14.64,
+        "score": 54.35,
+        "Temps_Jeu_Heures": 14.69,
         "Winrate_%": 38.78,
-        "KDA": 4.26,
-        "Elims_Moyenne": 19.12,
-        "Assists_Moyenne": 5.42,
-        "Degats_Moyenne": 9994.48,
+        "KDA": 4.24,
+        "Elims_Moyenne": 19.06,
+        "Assists_Moyenne": 5.41,
+        "Degats_Moyenne": 9981.72,
         "Soins_Moyenne": 0.0
       },
       {
@@ -626,13 +626,13 @@
       {
         "pseudo": "Nao",
         "score": 70.37,
-        "Temps_Jeu_Heures": 28.2,
+        "Temps_Jeu_Heures": 28.22,
         "Winrate_%": 53.16,
-        "KDA": 2.42,
-        "Elims_Moyenne": 19.49,
+        "KDA": 2.43,
+        "Elims_Moyenne": 19.52,
         "Assists_Moyenne": 0.2,
-        "Degats_Moyenne": 8212.08,
-        "Soins_Moyenne": 617.92
+        "Degats_Moyenne": 8210.0,
+        "Soins_Moyenne": 618.6
       },
       {
         "pseudo": "Jhonasse",
@@ -706,7 +706,7 @@
     "bastion": [
       {
         "pseudo": "Zenitude",
-        "score": 98.92,
+        "score": 99.15,
         "Temps_Jeu_Heures": 33.48,
         "Winrate_%": 57.26,
         "KDA": 3.24,
@@ -717,7 +717,7 @@
       },
       {
         "pseudo": "Aupif",
-        "score": 69.89,
+        "score": 70.2,
         "Temps_Jeu_Heures": 38.31,
         "Winrate_%": 57.14,
         "KDA": 2.92,
@@ -728,7 +728,7 @@
       },
       {
         "pseudo": "Colbern",
-        "score": 39.76,
+        "score": 40.28,
         "Temps_Jeu_Heures": 18.97,
         "Winrate_%": 50.0,
         "KDA": 2.34,
@@ -739,7 +739,7 @@
       },
       {
         "pseudo": "leCongolais",
-        "score": 28.84,
+        "score": 29.06,
         "Temps_Jeu_Heures": 13.33,
         "Winrate_%": 50.56,
         "KDA": 2.16,
@@ -749,19 +749,8 @@
         "Soins_Moyenne": 254.98
       },
       {
-        "pseudo": "Thieuthieu",
-        "score": 24.75,
-        "Temps_Jeu_Heures": 10.6,
-        "Winrate_%": 44.59,
-        "KDA": 2.16,
-        "Elims_Moyenne": 17.1,
-        "Assists_Moyenne": 2.11,
-        "Degats_Moyenne": 9936.65,
-        "Soins_Moyenne": 94.97
-      },
-      {
         "pseudo": "Jhonasse",
-        "score": 24.67,
+        "score": 25.1,
         "Temps_Jeu_Heures": 39.29,
         "Winrate_%": 49.82,
         "KDA": 2.29,
@@ -769,6 +758,17 @@
         "Assists_Moyenne": 1.64,
         "Degats_Moyenne": 9239.33,
         "Soins_Moyenne": 60.33
+      },
+      {
+        "pseudo": "Thieuthieu",
+        "score": 24.84,
+        "Temps_Jeu_Heures": 10.68,
+        "Winrate_%": 44.59,
+        "KDA": 2.15,
+        "Elims_Moyenne": 17.07,
+        "Assists_Moyenne": 2.09,
+        "Degats_Moyenne": 9931.02,
+        "Soins_Moyenne": 103.74
       }
     ],
     "cassidy": [
@@ -1019,14 +1019,14 @@
       },
       {
         "pseudo": "Nao",
-        "score": 78.27,
-        "Temps_Jeu_Heures": 66.04,
-        "Winrate_%": 55.82,
-        "KDA": 3.92,
-        "Elims_Moyenne": 18.63,
-        "Assists_Moyenne": 4.99,
-        "Degats_Moyenne": 7828.97,
-        "Soins_Moyenne": 1273.62
+        "score": 78.65,
+        "Temps_Jeu_Heures": 66.16,
+        "Winrate_%": 55.92,
+        "KDA": 3.93,
+        "Elims_Moyenne": 18.65,
+        "Assists_Moyenne": 5.0,
+        "Degats_Moyenne": 7829.0,
+        "Soins_Moyenne": 1273.1
       },
       {
         "pseudo": "Zenitude",
@@ -1147,24 +1147,24 @@
       {
         "pseudo": "Nao",
         "score": 100.0,
-        "Temps_Jeu_Heures": 19.64,
-        "Winrate_%": 51.47,
+        "Temps_Jeu_Heures": 19.98,
+        "Winrate_%": 51.45,
         "KDA": 3.04,
-        "Elims_Moyenne": 20.77,
+        "Elims_Moyenne": 20.7,
         "Assists_Moyenne": 2.12,
-        "Degats_Moyenne": 8648.47,
-        "Soins_Moyenne": 314.43
+        "Degats_Moyenne": 8618.72,
+        "Soins_Moyenne": 311.18
       },
       {
         "pseudo": "Colbern",
         "score": 0.0,
-        "Temps_Jeu_Heures": 6.53,
-        "Winrate_%": 46.67,
-        "KDA": 2.18,
-        "Elims_Moyenne": 16.06,
-        "Assists_Moyenne": 1.81,
-        "Degats_Moyenne": 8329.61,
-        "Soins_Moyenne": 229.29
+        "Temps_Jeu_Heures": 6.67,
+        "Winrate_%": 47.83,
+        "KDA": 2.19,
+        "Elims_Moyenne": 16.13,
+        "Assists_Moyenne": 1.8,
+        "Degats_Moyenne": 8396.32,
+        "Soins_Moyenne": 229.22
       }
     ],
     "sierra": [
@@ -1391,18 +1391,18 @@
     "tracer": [
       {
         "pseudo": "Thieuthieu",
-        "score": 83.53,
-        "Temps_Jeu_Heures": 76.58,
-        "Winrate_%": 58.05,
+        "score": 83.54,
+        "Temps_Jeu_Heures": 76.63,
+        "Winrate_%": 57.87,
         "KDA": 2.16,
-        "Elims_Moyenne": 18.27,
+        "Elims_Moyenne": 18.28,
         "Assists_Moyenne": 0.03,
-        "Degats_Moyenne": 6893.54,
-        "Soins_Moyenne": 9.96
+        "Degats_Moyenne": 6895.14,
+        "Soins_Moyenne": 10.06
       },
       {
         "pseudo": "Nao",
-        "score": 72.85,
+        "score": 72.88,
         "Temps_Jeu_Heures": 15.56,
         "Winrate_%": 50.0,
         "KDA": 2.98,
@@ -1413,7 +1413,7 @@
       },
       {
         "pseudo": "Aupif",
-        "score": 57.14,
+        "score": 57.27,
         "Temps_Jeu_Heures": 27.79,
         "Winrate_%": 53.72,
         "KDA": 2.17,
@@ -1424,7 +1424,7 @@
       },
       {
         "pseudo": "Colbern",
-        "score": 47.68,
+        "score": 47.83,
         "Temps_Jeu_Heures": 13.42,
         "Winrate_%": 54.35,
         "KDA": 1.78,
@@ -1435,7 +1435,7 @@
       },
       {
         "pseudo": "Jhonasse",
-        "score": 38.47,
+        "score": 38.42,
         "Temps_Jeu_Heures": 28.44,
         "Winrate_%": 45.74,
         "KDA": 1.81,
@@ -1507,13 +1507,13 @@
     "widowmaker": [
       {
         "pseudo": "Nao",
-        "score": 77.79,
-        "Temps_Jeu_Heures": 260.98,
-        "Winrate_%": 46.89,
+        "score": 77.85,
+        "Temps_Jeu_Heures": 261.08,
+        "Winrate_%": 46.92,
         "KDA": 3.08,
         "Elims_Moyenne": 14.47,
         "Assists_Moyenne": 3.05,
-        "Degats_Moyenne": 5689.67,
+        "Degats_Moyenne": 5690.13,
         "Soins_Moyenne": 0.0
       },
       {
@@ -1830,13 +1830,13 @@
       {
         "pseudo": "Nao",
         "score": 100.0,
-        "Temps_Jeu_Heures": 54.94,
-        "Winrate_%": 58.4,
+        "Temps_Jeu_Heures": 55.12,
+        "Winrate_%": 58.25,
         "KDA": 5.33,
-        "Elims_Moyenne": 18.21,
-        "Assists_Moyenne": 10.0,
-        "Degats_Moyenne": 4810.04,
-        "Soins_Moyenne": 8475.58
+        "Elims_Moyenne": 18.22,
+        "Assists_Moyenne": 10.02,
+        "Degats_Moyenne": 4812.04,
+        "Soins_Moyenne": 8468.23
       },
       {
         "pseudo": "Jhonasse",
@@ -1910,7 +1910,7 @@
     "kiriko": [
       {
         "pseudo": "Thieuthieu",
-        "score": 66.07,
+        "score": 66.03,
         "Temps_Jeu_Heures": 168.53,
         "Winrate_%": 53.51,
         "KDA": 3.93,
@@ -1921,7 +1921,7 @@
       },
       {
         "pseudo": "Aupif",
-        "score": 64.63,
+        "score": 64.61,
         "Temps_Jeu_Heures": 50.5,
         "Winrate_%": 51.04,
         "KDA": 4.16,
@@ -1932,7 +1932,7 @@
       },
       {
         "pseudo": "Colbern",
-        "score": 58.48,
+        "score": 58.43,
         "Temps_Jeu_Heures": 64.67,
         "Winrate_%": 51.13,
         "KDA": 3.66,
@@ -1943,7 +1943,7 @@
       },
       {
         "pseudo": "Tomix",
-        "score": 48.97,
+        "score": 48.93,
         "Temps_Jeu_Heures": 40.73,
         "Winrate_%": 49.65,
         "KDA": 4.73,
@@ -1965,18 +1965,18 @@
       },
       {
         "pseudo": "Nao",
-        "score": 35.47,
-        "Temps_Jeu_Heures": 88.76,
-        "Winrate_%": 49.84,
+        "score": 35.83,
+        "Temps_Jeu_Heures": 89.17,
+        "Winrate_%": 49.92,
         "KDA": 4.52,
         "Elims_Moyenne": 12.52,
-        "Assists_Moyenne": 13.19,
-        "Degats_Moyenne": 4088.93,
-        "Soins_Moyenne": 7729.27
+        "Assists_Moyenne": 13.2,
+        "Degats_Moyenne": 4093.26,
+        "Soins_Moyenne": 7735.57
       },
       {
         "pseudo": "leCongolais",
-        "score": 22.52,
+        "score": 22.45,
         "Temps_Jeu_Heures": 18.95,
         "Winrate_%": 50.0,
         "KDA": 3.37,
@@ -1987,7 +1987,7 @@
       },
       {
         "pseudo": "Jhonasse",
-        "score": 14.47,
+        "score": 14.4,
         "Temps_Jeu_Heures": 22.19,
         "Winrate_%": 48.72,
         "KDA": 3.45,
